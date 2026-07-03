@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DF Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#2B2BE0;
+  --blue-dk:#1C1CB8;
+  --blue-lt:#E8E8FA;
+  --cream:#EDEAD9;
+  --cream-dk:#E0DCCB;
+  --cream-dk2:#D4CFB8;
+  --red:#CC2222;
+  --red-lt:#FAE8E8;
+  --green:#1A7A60;
+  --green-lt:#E4F0EC;
+  --gold:#C9A227;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--blue);}
+body{font-family:'Sarabun',sans-serif;background:var(--blue);color:var(--blue);min-height:100vh;}
+
+/* ── Layout ── */
+#app{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
+
+/* ── Topbar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;gap:12px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--cream);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-family:'IBM Plex Mono',monospace;font-size:13px;flex-shrink:0;
+}
+.brand h1{font-size:18px;font-weight:800;color:var(--cream);letter-spacing:.5px;}
+.brand .sub{font-size:11px;color:rgba(237,234,217,.6);margin-top:1px;}
+nav.tabs{display:flex;gap:4px;background:rgba(237,234,217,.15);border-radius:999px;padding:4px;}
+nav.tabs button{
+  border:none;background:transparent;padding:8px 16px;border-radius:999px;
+  font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
+  color:rgba(237,234,217,.7);cursor:pointer;transition:.15s;white-space:nowrap;
+}
+nav.tabs button.active{background:var(--cream);color:var(--blue);}
+
+/* ── Calendar card ── */
+.cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
+
+/* Big month header */
+.cal-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:22px 24px 18px;border-bottom:2px solid var(--blue);
+}
+.cal-header .month-num{
+  font-size:clamp(72px,12vw,110px);font-weight:800;line-height:1;
+  font-family:'IBM Plex Mono',monospace;
+  color:transparent;-webkit-text-stroke:2.5px var(--blue);
+  letter-spacing:-4px;flex-shrink:0;
+}
+.cal-header .month-right{text-align:right;}
+.cal-header .month-name{
+  font-size:clamp(22px,4vw,38px);font-weight:800;color:var(--blue);
+  letter-spacing:1px;line-height:1.1;
+}
+.cal-header .year-label{font-size:clamp(14px,2.5vw,20px);color:var(--blue);opacity:.6;margin-top:2px;font-weight:600;}
+
+/* Month nav buttons inside header */
+.mnav{display:flex;gap:6px;margin-top:10px;justify-content:flex-end;}
+.mnav button{
+  width:30px;height:30px;border-radius:50%;border:2px solid var(--blue);
+  background:transparent;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.12s;
+}
+.mnav button:hover{background:var(--blue);color:var(--cream);}
+
+/* Grid */
+.cal-grid{padding:0;}
+.weekdays{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  border-bottom:2px solid var(--blue);
+}
+.weekdays div{
+  text-align:center;font-size:11px;font-weight:700;
+  color:var(--blue);padding:8px 4px;letter-spacing:.5px;
+  border-right:1px solid rgba(43,43,224,.2);
+}
+.weekdays div:last-child{border-right:none;}
+.daygrid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cell{
+  border-right:1px solid rgba(43,43,224,.2);
+  border-bottom:1px solid rgba(43,43,224,.2);
+  min-height:80px;padding:6px 8px 6px;cursor:pointer;
+  position:relative;transition:.1s;
+}
+.cell:nth-child(7n){border-right:none;}
+.cell:hover{background:var(--blue-lt);}
+.cell.empty{cursor:default;background:rgba(43,43,224,.04);}
+.cell.empty:hover{background:rgba(43,43,224,.04);}
+.cell .dnum{
+  font-size:13px;font-weight:700;color:var(--blue);
+  text-align:right;opacity:.5;
+}
+.cell.has-data .dnum{opacity:1;}
+.cell.today{background:var(--blue);}
+.cell.today .dnum{color:var(--cream);opacity:1;}
+.cell.today:hover{background:var(--blue-dk);}
+.cell .cdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
+.cdot{width:6px;height:6px;border-radius:50%;}
+.cell.today .cdot{outline:1px solid rgba(237,234,217,.5);}
+.cell .cnet{
+  position:absolute;bottom:6px;left:6px;right:6px;
+  font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:600;
+  color:var(--blue);text-align:right;
+}
+.cell.today .cnet{color:var(--cream);}
+.cell .cbar{
+  position:absolute;left:0;bottom:0;height:3px;
+  background:var(--blue);transform-origin:left;opacity:.3;
+}
+
+/* ── Shared card ── */
+.card{background:var(--cream);border-radius:18px;padding:20px 22px;margin-bottom:14px;}
+
+/* ── Summary ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.stat{
+  border:2px solid var(--blue);border-radius:12px;padding:13px 14px;background:var(--cream);
+}
+.stat .sl{font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;}
+.stat .sv{font-size:19px;font-weight:800;color:var(--blue);font-family:'IBM Plex Mono',monospace;}
+.stat.hilite{background:var(--blue);}
+.stat.hilite .sl{color:var(--cream);}
+.stat.hilite .sv{color:var(--cream);}
+.stat.deduct .sv{color:var(--red);}
+
+/* Section headings */
+.sec-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:800;color:var(--cream);
+  margin:20px 0 10px;letter-spacing:.3px;
+}
+.sec-title .badge{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  background:rgba(237,234,217,.2);color:var(--cream);padding:3px 8px;border-radius:6px;
+}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;background:var(--cream);border-radius:12px;overflow:hidden;border:2px solid var(--blue);}
+th,td{padding:9px 12px;text-align:left;font-size:12px;border-bottom:1px solid rgba(43,43,224,.15);}
+th{background:var(--blue);color:var(--cream);font-weight:700;font-size:11px;letter-spacing:.3px;}
+tr:last-child td{border-bottom:none;}
+td.r,th.r{text-align:right;font-family:'IBM Plex Mono',monospace;}
+td.net-col{font-weight:800;color:var(--blue);}
+
+/* Clinic cards */
+.clist{display:flex;flex-direction:column;gap:8px;}
+.ccard{
+  border:2px solid var(--blue);border-radius:12px;padding:13px 15px;background:var(--cream);
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;
+}
+.ccard .cn{display:flex;align-items:center;gap:7px;font-weight:800;font-size:15px;color:var(--blue);}
+.swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;display:inline-block;}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.pill{font-size:11px;padding:3px 9px;border-radius:999px;border:1.5px solid var(--blue);color:var(--blue);font-weight:600;}
+.pill.off{opacity:.4;}
+.const-banner{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;
+}
+.cbadge{
+  font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+  background:rgba(237,234,217,.18);color:var(--cream);padding:5px 12px;
+  border-radius:8px;border:1px solid rgba(237,234,217,.3);
+}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:9px;padding:9px 16px;font-family:'Sarabun',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;}
+.btn-primary{background:var(--blue);color:var(--cream);}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn-ghost{background:transparent;border:2px solid var(--blue);color:var(--blue);}
+.btn-ghost:hover{background:var(--blue-lt);}
+.btn-danger{background:transparent;border:2px solid var(--red);color:var(--red);}
+.btn-danger:hover{background:var(--red-lt);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1.5px solid rgba(43,43,224,.3);background:transparent;cursor:pointer;color:var(--blue);transition:.1s;}
+.btn-icon:hover{border-color:var(--red);color:var(--red);background:var(--red-lt);}
+.add-row{display:flex;justify-content:flex-end;margin-top:12px;}
+
+/* ── Overlay / Modal ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(12,12,100,.55);
+  display:flex;align-items:flex-end;justify-content:center;z-index:50;
+}
+@media(min-width:600px){.overlay{align-items:center;padding:20px;}}
+.modal{
+  background:var(--cream);border-radius:18px 18px 0 0;
+  max-width:500px;width:100%;max-height:92vh;overflow-y:auto;
+  padding:22px 20px 28px;
+}
+@media(min-width:600px){.modal{border-radius:16px;}}
+.modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.modal-h h2{font-size:18px;font-weight:800;color:var(--blue);}
+
+/* Form */
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;}
+.field input,.field select{
+  width:100%;border:2px solid rgba(43,43,224,.3);border-radius:9px;
+  padding:9px 11px;font-family:'Sarabun',sans-serif;font-size:14px;
+  background:#fff;color:var(--blue);
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);}
+.seg{display:flex;border:2px solid var(--blue);border-radius:9px;overflow:hidden;}
+.seg button{
+  flex:1;border:none;background:transparent;padding:9px;
+  font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--blue);transition:.12s;
+}
+.seg button.active{background:var(--blue);color:var(--cream);}
+
+/* Case rows */
+.cases-wrap{border:2px solid var(--blue);border-radius:10px;overflow:hidden;margin-bottom:13px;}
+.cases-hd{
+  display:grid;grid-template-columns:1fr 100px 30px;gap:8px;
+  padding:7px 10px;background:var(--blue);
+  font-size:11px;font-weight:700;color:var(--cream);letter-spacing:.3px;
+}
+.case-row{
+  display:grid;grid-template-columns:1fr 100px 30px;gap:8px;align-items:center;
+  padding:7px 10px;border-top:1px solid rgba(43,43,224,.15);
+}
+.case-row input[type=text]{
+  width:100%;border:1.5px solid rgba(43,43,224,.25);border-radius:7px;
+  padding:6px 8px;font-family:'Sarabun',sans-serif;font-size:13px;
+  background:#fff;color:var(--blue);
+}
+.case-row input[type=number]{
+  width:100%;border:1.5px solid rgba(43,43,224,.25);border-radius:7px;
+  padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:13px;
+  text-align:right;background:#fff;color:var(--blue);
+}
+.case-row input:focus{outline:none;border-color:var(--blue);}
+.add-case-btn{
+  display:flex;align-items:center;gap:6px;width:100%;border:none;background:transparent;
+  padding:9px 10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
+  color:var(--blue);cursor:pointer;border-top:1px solid rgba(43,43,224,.15);
+}
+.add-case-btn:hover{background:var(--blue-lt);}
+.cases-total{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 10px;background:var(--blue-lt);border-top:1px solid rgba(43,43,224,.2);
+  font-size:12px;font-weight:700;color:var(--blue);
+}
+.cases-total .tv{font-family:'IBM Plex Mono',monospace;font-size:14px;}
+
+/* SS box */
+.ss-box{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:13px;}
+.ss-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.ss-label{font-size:13px;font-weight:700;color:var(--blue);}
+.ss-hint{font-size:11px;color:var(--blue);opacity:.55;margin-top:2px;}
+.ss-count-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.ss-count-row label{font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap;}
+.ss-count-row input{
+  width:80px;border:2px solid var(--blue);border-radius:7px;
+  padding:6px 8px;font-family:'IBM Plex Mono',monospace;font-size:14px;
+  font-weight:700;text-align:center;color:var(--blue);background:#fff;
+}
+.ss-count-row input:focus{outline:none;}
+.ss-calc{
+  margin-top:8px;padding:8px 10px;background:var(--red-lt);border-radius:8px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:700;color:var(--red);
+}
+.ss-calc .sv{font-family:'IBM Plex Mono',monospace;font-size:15px;}
+
+/* Lab box */
+.lab-box{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:13px;}
+.lab-box label{font-size:11px;font-weight:700;color:var(--blue);opacity:.6;display:block;margin-bottom:5px;letter-spacing:.3px;}
+.lab-box input{
+  width:100%;border:2px solid rgba(43,43,224,.3);border-radius:8px;
+  padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:14px;
+  background:#fff;color:var(--blue);
+}
+.lab-box input:focus{outline:none;border-color:var(--blue);}
+.lab-calc{
+  margin-top:8px;padding:8px 10px;background:var(--red-lt);border-radius:8px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:700;color:var(--red);
+}
+.lab-calc .lv{font-family:'IBM Plex Mono',monospace;font-size:15px;}
+
+/* Toggle */
+.switch{position:relative;width:40px;height:22px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:#C8C5B5;border-radius:999px;cursor:pointer;transition:.15s;}
+.slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+input:checked+.slider{background:var(--blue);}
+input:checked+.slider:before{transform:translateX(18px);}
+
+/* Net preview */
+.net-box{
+  background:var(--blue);border-radius:12px;padding:14px 16px;margin-top:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.net-box .nl{font-size:13px;font-weight:700;color:rgba(237,234,217,.7);}
+.net-box .nv{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:800;color:var(--cream);}
+.formula{font-size:11px;color:var(--blue);opacity:.6;margin-top:6px;font-family:'IBM Plex Mono',monospace;padding:0 2px;}
+.formula .neg{color:var(--red);opacity:1;}
+.formula .pos{color:var(--green);opacity:1;}
+
+/* Modal footer */
+.modal-footer{display:flex;gap:8px;margin-top:16px;}
+.modal-footer .btn{flex:1;}
+
+/* Day modal entries */
+.entry-card{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:8px;}
+.ec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.ec-name{display:flex;align-items:center;gap:6px;font-weight:800;font-size:14px;color:var(--blue);}
+.ec-meta{font-size:11px;color:var(--blue);opacity:.55;margin-top:3px;}
+.ec-net{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:17px;color:var(--blue);white-space:nowrap;}
+.ec-cases{margin-top:9px;border-top:1px solid rgba(43,43,224,.15);padding-top:7px;}
+.case-line{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px dashed rgba(43,43,224,.15);}
+.case-line:last-child{border-bottom:none;}
+.case-line .ca{color:var(--blue);}
+.case-line .cv{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--blue);}
+.ec-deduct{margin-top:6px;font-size:11px;color:var(--red);display:flex;gap:10px;flex-wrap:wrap;}
+.ec-note{margin-top:7px;font-size:12px;color:var(--blue);opacity:.6;border-top:1px solid rgba(43,43,224,.15);padding-top:6px;font-style:italic;}
+
+/* Empty state */
+.empty-state{text-align:center;color:var(--cream);opacity:.6;font-size:13px;padding:32px 10px;}
+.empty-state .big{font-size:30px;margin-bottom:6px;opacity:1;}
+.empty-state-cream{text-align:center;color:var(--blue);opacity:.5;font-size:13px;padding:28px 10px;}
+.empty-state-cream .big{font-size:28px;margin-bottom:6px;opacity:.7;}
+
+@media(max-width:520px){
+  .cal-header{padding:16px 16px 12px;}
+  .cal-header .month-num{font-size:72px;}
+  .cal-header .month-name{font-size:22px;}
+  .cell{min-height:60px;padding:5px 5px 4px;}
+  .cell .dnum{font-size:11px;}
+  .cell .cnet{font-size:9px;}
+  nav.tabs button{padding:7px 11px;font-size:12px;}
+  .cases-hd{grid-template-columns:1fr 85px 30px;}
+  .case-row{grid-template-columns:1fr 85px 30px;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ═══════════ Constants ═══════════ */
+const SS_PER_CASE   = 100;
+const LAB_SPLIT_PCT = 50;
+
+/* ═══════════ Storage ═══════════ */
+const CK='dft-clinics-v2', EK='dft-entries-v2';
+const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
+function loadClinics(){
+  const r=localStorage.getItem(CK);
+  if(r) return JSON.parse(r);
+  const s=[
+    {id:uid(),name:'คลินิกตัวอย่าง A',color:'#1A7A60',dfPct:40,ssDeduct:true, xrayFee:false},
+    {id:uid(),name:'คลินิกตัวอย่าง B',color:'#C9A227',dfPct:50,ssDeduct:false,xrayFee:true},
+  ];
+  saveC(s); return s;
+}
+function saveC(l){localStorage.setItem(CK,JSON.stringify(l));}
+function loadEntries(){const r=localStorage.getItem(EK);return r?JSON.parse(r):{};}
+function saveE(o){localStorage.setItem(EK,JSON.stringify(o));}
+function uid(){return Math.random().toString(36).slice(2,9);}
+
+let clinics=loadClinics(), entries=loadEntries();
+
+/* ═══════════ State ═══════════ */
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null};
+const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const MN_SHORT=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const fmt=n=>(Number(n)||0).toLocaleString('en-US');
+const ds=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const byId=id=>clinics.find(c=>c.id===id);
+const pad2=n=>String(n).padStart(2,'0');
+
+/* ═══════════ Math ═══════════ */
+function calc(e){
+  const cases=e.cases||[];
+  const gross=cases.reduce((s,c)=>s+(Number(c.amount)||0),0);
+  const dfPct=Number(e.dfPct)||0;
+  const dfIncome=Math.round(gross*dfPct/100);
+  const totalCases=cases.length;
+  const ssCases=Number(e.ssCaseCount)||0;
+  const labTot=Number(e.labFeeTotal)||0;
+  const labShare=Math.round(labTot*LAB_SPLIT_PCT/100);
+  const ss=e.ssDeduct?ssCases*SS_PER_CASE:0;
+  const net=dfIncome-ss-labShare;
+  return{gross,dfPct,dfIncome,totalCases,ssCases,labTot,labShare,ss,net};
+}
+function dayE(d){return entries[d]||[];}
+function monthE(y,m){
+  const out=[];
+  Object.keys(entries).forEach(d=>{
+    const[yy,mm]=d.split('-').map(Number);
+    if(yy===y&&mm-1===m) entries[d].forEach(e=>out.push({date:d,...e}));
+  });
+  return out;
+}
+
+/* ═══════════ Root render ═══════════ */
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML=`
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark">DF</div>
+        <div><h1>DF TRACKER</h1><div class="sub">บันทึกรายได้คลินิกรายวัน</div></div>
+      </div>
+      <nav class="tabs">
+        <button data-tab="calendar" class="${S.tab==='calendar'?'active':''}">ปฏิทิน</button>
+        <button data-tab="clinics"  class="${S.tab==='clinics' ?'active':''}">คลินิก</button>
+        <button data-tab="summary"  class="${S.tab==='summary' ?'active':''}">สรุปเดือน</button>
+      </nav>
+    </div>
+    <div id="content"></div>`;
+  app.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render();});
+  renderContent(); renderModals();
+}
+
+function renderContent(){
+  const el=document.getElementById('content');
+  if(S.tab==='calendar') return renderCalendar(el);
+  if(S.tab==='clinics')  return renderClinics(el);
+  if(S.tab==='summary')  return renderSummary(el);
+}
+
+/* ═══════════ Calendar ═══════════ */
+function renderCalendar(el){
+  const y=S.y,m=S.m;
+  const startDow=new Date(y,m,1).getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  const me=monthE(y,m);
+  const netMap={};
+  me.forEach(e=>{const{net}=calc(e);netMap[e.date]=(netMap[e.date]||0)+net;});
+  const maxNet=Math.max(1,...Object.values(netMap));
+  const today=ds(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div class="cell empty"></div>`;
+  for(let d=1;d<=dim;d++){
+    const date=ds(y,m,d);
+    const de=dayE(date);
+    const net=netMap[date]||0;
+    const pct=de.length?Math.max(6,Math.min(100,net/maxNet*100)):0;
+    const dots=de.map(e=>{const c=byId(e.clinicId);return`<span class="cdot" style="background:${c?c.color:'#aaa'}"></span>`;}).join('');
+    const isToday=date===today;
+    cells+=`
+      <div class="cell ${isToday?'today':''} ${de.length?'has-data':''}" data-date="${date}">
+        <div class="dnum">${d}</div>
+        <div class="cdots">${dots}</div>
+        ${de.length?`<div class="cbar" style="width:${pct}%"></div><div class="cnet">฿${fmt(net)}</div>`:''}
+      </div>`;
+  }
+  // fill remaining cells to complete last row
+  const total=startDow+dim;
+  const rem=(7-total%7)%7;
+  for(let i=0;i<rem;i++) cells+=`<div class="cell empty"></div>`;
+
+  el.innerHTML=`
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <div class="month-num">${pad2(m+1)}</div>
+        <div class="month-right">
+          <div class="month-name">${MN[m].toUpperCase()}.</div>
+          <div class="year-label">${y+543}</div>
+          <div class="mnav">
+            <button id="pM">‹</button>
+            <button id="nM">›</button>
+          </div>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="weekdays">${WD.map(w=>`<div>${w}</div>`).join('')}</div>
+        <div class="daygrid">${cells}</div>
+      </div>
+    </div>`;
+  el.querySelector('#pM').onclick=()=>shiftM(-1);
+  el.querySelector('#nM').onclick=()=>shiftM(1);
+  el.querySelectorAll('.cell[data-date]').forEach(c=>c.onclick=()=>{S.dayModal=c.dataset.date;renderModals();});
+}
+function shiftM(d){let m=S.m+d,y=S.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}S.m=m;S.y=y;renderContent();}
+
+/* ═══════════ Clinics ═══════════ */
+function renderClinics(el){
+  el.innerHTML=`
+    <div class="sec-title"><span class="badge">CONSTANTS</span> ค่าคงที่ทั้งแอป</div>
+    <div class="const-banner">
+      <span class="cbadge">🛡 ปกส. = ฿${SS_PER_CASE} × จำนวนเคส ปกส.</span>
+      <span class="cbadge">⚗️ หารค่าแลป ${LAB_SPLIT_PCT}/${100-LAB_SPLIT_PCT}</span>
+    </div>
+    <div class="sec-title"><span class="badge">CLINICS</span> รายการคลินิก</div>
+    <div class="clist" id="cList"></div>
+    <div class="add-row"><button class="btn btn-primary" id="addC">+ เพิ่มคลินิก</button></div>`;
+  const list=el.querySelector('#cList');
+  if(!clinics.length){
+    list.innerHTML=`<div class="empty-state"><div class="big">🦷</div>ยังไม่มีคลินิก</div>`;
+  } else {
+    list.innerHTML=clinics.map(c=>`
+      <div class="ccard">
+        <div>
+          <div class="cn"><span class="swatch" style="background:${c.color}"></span>${c.name}</div>
+          <div class="pills">
+            <span class="pill">DF ${c.dfPct||0}%</span>
+            <span class="pill ${c.ssDeduct?'':'off'}">${c.ssDeduct?'หักปกส.':'ไม่หักปกส.'}</span>
+            <span class="pill ${c.xrayFee?'':'off'}">${c.xrayFee?'📷 ได้ค่าฟิล์ม':'ไม่ได้ค่าฟิล์ม'}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" data-e="${c.id}">แก้ไข</button>
+          <button class="btn btn-danger btn-sm" data-d="${c.id}">ลบ</button>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{S.clinicEditor={...byId(b.dataset.e)};renderModals();});
+    list.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
+      if(confirm('ลบคลินิกนี้?')){clinics=clinics.filter(c=>c.id!==b.dataset.d);saveC(clinics);renderClinics(el);}
+    });
+  }
+  el.querySelector('#addC').onclick=()=>{
+    S.clinicEditor={id:null,name:'',color:PAL[clinics.length%PAL.length],dfPct:40,ssDeduct:false,xrayFee:false};renderModals();
+  };
+}
+
+/* ═══════════ Summary ═══════════ */
+function renderSummary(el){
+  const y=S.y,m=S.m;
+  const me=monthE(y,m);
+  let tGross=0,tDfIncome=0,tSS=0,tLab=0,tNet=0;
+  const byC={};
+  me.forEach(e=>{
+    const{gross,dfIncome,ss,labShare,net,totalCases,ssCases}=calc(e);
+    tGross+=gross;tDfIncome+=dfIncome;tSS+=ss;tLab+=labShare;tNet+=net;
+    byC[e.clinicId]=byC[e.clinicId]||{gross:0,dfIncome:0,ss:0,lab:0,net:0,days:new Set(),cases:0,ssCases:0};
+    const b=byC[e.clinicId];
+    b.gross+=gross;b.dfIncome+=dfIncome;b.ss+=ss;b.lab+=labShare;b.net+=net;b.days.add(e.date);b.cases+=totalCases;b.ssCases+=ssCases;
+  });
+  const days=new Set(me.map(e=>e.date)).size;
+  el.innerHTML=`
+    <div class="sec-title"><span class="badge">MONTH</span> ${MN[m]} ${y+543}</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn btn-ghost btn-sm" id="pM">‹ เดือนก่อน</button>
+      <button class="btn btn-ghost btn-sm" id="nM">เดือนหน้า ›</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="sl">Gross รวม</div><div class="sv">฿${fmt(tGross)}</div></div>
+      <div class="stat"><div class="sl">รายได้ DF</div><div class="sv">฿${fmt(tDfIncome)}</div></div>
+      <div class="stat deduct"><div class="sl">หักปกส.</div><div class="sv">฿${fmt(tSS)}</div></div>
+      <div class="stat deduct"><div class="sl">หารค่าแลป ${LAB_SPLIT_PCT}%</div><div class="sv">฿${fmt(tLab)}</div></div>
+      <div class="stat hilite"><div class="sl">รายได้สุทธิ</div><div class="sv">฿${fmt(tNet)}</div></div>
+      <div class="stat"><div class="sl">วันที่ลงทำ</div><div class="sv">${days} วัน</div></div>
+    </div>
+    <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก</div>
+    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">📅</div>ยังไม่มีข้อมูลเดือนนี้</div>`:`
+    <table>
+      <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">เคส</th><th class="r">Gross</th><th class="r">DF Income</th><th class="r">ปกส.</th><th class="r">แลป</th><th class="r">สุทธิ</th></tr></thead>
+      <tbody>
+        ${Object.entries(byC).map(([id,b])=>{
+          const c=byId(id);
+          return`<tr>
+            <td><span class="swatch" style="background:${c?c.color:'#aaa'}"></span> ${c?c.name:'(ลบแล้ว)'}</td>
+            <td class="r">${b.days.size}</td>
+            <td class="r">${b.cases}</td>
+            <td class="r">฿${fmt(b.gross)}</td>
+            <td class="r">฿${fmt(b.dfIncome)}</td>
+            <td class="r">฿${fmt(b.ss)}</td>
+            <td class="r">฿${fmt(b.lab)}</td>
+            <td class="r net-col">฿${fmt(b.net)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`}`;
+  el.querySelector('#pM').onclick=()=>shiftM(-1);
+  el.querySelector('#nM').onclick=()=>shiftM(1);
+}
+
+/* ═══════════ Modals ═══════════ */
+function renderModals(){
+  let host=document.getElementById('mhost');
+  if(!host){host=document.createElement('div');host.id='mhost';document.body.appendChild(host);}
+  host.innerHTML='';
+  if(S.dayModal)     host.appendChild(buildDayModal(S.dayModal));
+  if(S.entryEditor)  host.appendChild(buildEntryEditor(S.entryEditor));
+  if(S.clinicEditor) host.appendChild(buildClinicEditor(S.clinicEditor));
+}
+
+/* Day overview */
+function buildDayModal(date){
+  const wrap=document.createElement('div');
+  wrap.className='overlay';
+  wrap.onclick=ev=>{if(ev.target===wrap){S.dayModal=null;renderModals();}};
+  const list=dayE(date);
+  const[yy,mm,dd]=date.split('-').map(Number);
+  wrap.innerHTML=`
+    <div class="modal">
+      <div class="modal-h">
+        <h2>${dd} ${MN[mm-1]} ${yy+543}</h2>
+      </div>
+      ${!list.length?`<div class="empty-state-cream"><div class="big">🗓️</div>ยังไม่มีรายการวันนี้</div>`:
+        list.map(e=>{
+          const c=byId(e.clinicId);
+          const{gross,dfPct,dfIncome,totalCases,ssCases,ss,labShare,net}=calc(e);
+          return`<div class="entry-card">
+            <div class="ec-top">
+              <div>
+                <div class="ec-name"><span class="cdot" style="background:${c?c.color:'#aaa'}"></span>${c?c.name:'(ลบแล้ว)'}</div>
+                <div class="ec-meta">${e.shift==='evening'?'🌆 ช่วงเย็น':'☀️ ทั้งวัน'} · ${totalCases} เคส · Gross ฿${fmt(gross)} → DF${dfPct}% = ฿${fmt(dfIncome)}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="ec-net">฿${fmt(net)}</div>
+                <button class="btn btn-ghost btn-sm" data-edit="${e.id}">แก้ไข</button>
+              </div>
+            </div>
+            ${(e.cases||[]).length?`
+              <div class="ec-cases">
+                ${(e.cases||[]).map((cs,i)=>`
+                  <div class="case-line">
+                    <span class="ca">${i+1}. ${cs.desc||'—'}</span>
+                    <span class="cv">฿${fmt(cs.amount)}</span>
+                  </div>`).join('')}
+              </div>`:''}
+            ${ss>0||labShare>0?`
+              <div class="ec-deduct">
+                ${ss>0?`<span>−ปกส. ฿${fmt(ss)} (${ssCases} เคส)</span>`:''}
+                ${labShare>0?`<span>−แลป ฿${fmt(labShare)}</span>`:''}
+              </div>`:''}
+            ${e.note?`<div class="ec-note">📝 ${e.note}</div>`:''}
+          </div>`;
+        }).join('')}
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="closeDay">ปิด</button>
+        <button class="btn btn-primary" id="addEntry">+ เพิ่มรายการ</button>
+      </div>
+    </div>`;
+  wrap.querySelector('#closeDay').onclick=()=>{S.dayModal=null;renderModals();};
+  wrap.querySelector('#addEntry').onclick=()=>{S.entryEditor={date,entry:null};renderModals();};
+  wrap.querySelectorAll('[data-edit]').forEach(b=>{
+    b.onclick=()=>{
+      const e=list.find(e=>e.id===b.dataset.edit);
+      S.entryEditor={date,entry:{...e,cases:(e.cases||[]).map(c=>({...c}))}};renderModals();
+    };
+  });
+  return wrap;
+}
+
+/* Entry editor */
+function buildEntryEditor(ctx){
+  const wrap=document.createElement('div');
+  wrap.className='overlay';
+  wrap.onclick=ev=>{if(ev.target===wrap){S.entryEditor=null;renderModals();}};
+  const isNew=!ctx.entry;
+  let draft=ctx.entry
+    ?{...ctx.entry,cases:(ctx.entry.cases||[]).map(c=>({...c}))}
+    :{id:uid(),clinicId:clinics[0]?.id||'',shift:'fullday',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,labFeeTotal:0,note:''};
+  if(isNew&&draft.clinicId){const c=byId(draft.clinicId);if(c){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}}
+
+  function formula(){
+    const{gross,dfPct,dfIncome,ssCases,ss,labShare,net}=calc(draft);
+    let f=`฿${fmt(gross)} × ${dfPct}% = ฿${fmt(dfIncome)}`;
+    if(ss>0)       f+=` <span class="neg">− ฿${fmt(ss)} (ปกส.×${ssCases})</span>`;
+    if(labShare>0) f+=` <span class="neg">− ฿${fmt(labShare)} (แลป${LAB_SPLIT_PCT}%)</span>`;
+    f+=` = <span class="pos">฿${fmt(net)}</span>`;
+    return f;
+  }
+
+  function paint(){
+    const{income,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const cl=byId(draft.clinicId);
+    wrap.innerHTML=`
+      <div class="modal">
+        <div class="modal-h"><h2>${isNew?'เพิ่มรายการ':'แก้ไขรายการ'}</h2></div>
+        <div class="field">
+          <label>คลินิก</label>
+          <select id="fClin">${clinics.map(c=>`<option value="${c.id}"${c.id===draft.clinicId?' selected':''}>${c.name}</option>`).join('')}</select>
+        </div>
+        <div class="field">
+          <label>DF % (สัดส่วนที่หมอได้)</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="number" id="fDF" value="${draft.dfPct||0}" min="0" max="100" style="width:90px;border:2px solid var(--blue);border-radius:9px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;text-align:center;color:var(--blue);background:#fff;"/>
+            <span style="font-size:13px;color:var(--blue);opacity:.6;">% จาก Gross ฿${fmt(calc(draft).gross)} = <strong>฿${fmt(calc(draft).dfIncome)}</strong></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>ช่วงที่ทำ</label>
+          <div class="seg">
+            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}">🌆 ช่วงเย็น</button>
+            <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}">☀️ ทั้งวัน</button>
+          </div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;">รายการเคส</div>
+        <div class="cases-wrap">
+          <div class="cases-hd"><span>งานที่ทำ</span><span style="text-align:right;">ได้รับ (฿)</span><span></span></div>
+          ${draft.cases.map((c,i)=>`
+            <div class="case-row">
+              <input type="text" class="cdesc" data-i="${i}" placeholder="เคส ${i+1}" value="${c.desc||''}"/>
+              <input type="number" class="camt"  data-i="${i}" value="${c.amount||''}" placeholder="0" min="0"/>
+              <button class="btn-icon" data-rm="${i}">✕</button>
+            </div>`).join('')}
+          ${totalCases>0?`<div class="cases-total"><span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(income)}</span></div>`:''}
+          <button class="add-case-btn" id="addCase">＋ เพิ่มเคส</button>
+        </div>
+
+        <div class="ss-box">
+          <div class="ss-top">
+            <div>
+              <div class="ss-label">หักประกันสังคม</div>
+              <div class="ss-hint">ระบุจำนวนเคสที่เป็นงาน ปกส. แยกจากเคสทั้งหมด</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="fSS"${draft.ssDeduct?' checked':''}><span class="slider"></span></label>
+          </div>
+          ${draft.ssDeduct?`
+            <div class="ss-count-row">
+              <label>จำนวนเคส ปกส.</label>
+              <input type="number" id="fSSCount" value="${draft.ssCaseCount||0}" min="0" placeholder="0"/>
+              <span style="font-size:12px;color:var(--blue);opacity:.6;">เคส × ฿${SS_PER_CASE}</span>
+            </div>
+            ${ssCases>0?`<div class="ss-calc"><span>${ssCases} เคส × ฿${SS_PER_CASE}</span><span class="sv">−฿${fmt(ss)}</span></div>`:''}
+          `:``}
+        </div>
+
+        <div class="lab-box">
+          <label>ค่าแลปรวม (บาท) — หมอออก ${LAB_SPLIT_PCT}%</label>
+          <input type="number" id="fLab" value="${draft.labFeeTotal||''}" placeholder="0" min="0"/>
+          ${labTot>0?`<div class="lab-calc"><span>หมอออก ${LAB_SPLIT_PCT}% (คลินิก ${100-LAB_SPLIT_PCT}%)</span><span class="lv">−฿${fmt(labShare)}</span></div>`:''}
+        </div>
+
+        ${cl?.xrayFee?`<div style="margin-bottom:12px;"><span class="pill">📷 คลินิกนี้ได้ค่าฟิล์ม</span></div>`:''}
+
+        <div class="field">
+          <label>หมายเหตุ</label>
+          <input type="text" id="fNote" value="${draft.note||''}" placeholder="เคสพิเศษ, โน้ตอื่นๆ"/>
+        </div>
+
+        <div style="font-size:12px;color:var(--blue);opacity:.55;margin-top:10px;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;">
+          Gross ฿${fmt(calc(draft).gross)} × ${draft.dfPct||0}% → DF ฿${fmt(calc(draft).dfIncome)}
+        </div>
+        <div class="net-box">
+          <div class="nl">รายได้สุทธิ</div>
+          <div class="nv">฿${fmt(net)}</div>
+        </div>
+        <div class="formula">${formula()}</div>
+
+        <div class="modal-footer">
+          ${!isNew?`<button class="btn btn-danger" id="delE">ลบ</button>`:''}
+          <button class="btn btn-ghost" id="cancelE">ยกเลิก</button>
+          <button class="btn btn-primary" id="saveE">บันทึก</button>
+        </div>
+      </div>`;
+    wire();
+  }
+
+  function wire(){
+    wrap.querySelector('#fClin').onchange=e=>{
+      draft.clinicId=e.target.value;
+      if(isNew){const c=byId(draft.clinicId);if(c){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}}
+      paint();
+    };
+    wrap.querySelector('#fDF').oninput=e=>{draft.dfPct=e.target.value;paint();};
+    wrap.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>{draft.shift=b.dataset.sh;paint();});
+    wrap.querySelectorAll('.cdesc').forEach(inp=>inp.oninput=e=>{draft.cases[+e.target.dataset.i].desc=e.target.value;});
+    wrap.querySelectorAll('.camt').forEach(inp=>inp.oninput=e=>{draft.cases[+e.target.dataset.i].amount=e.target.value;refreshNet();});
+    wrap.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{draft.cases.splice(+b.dataset.rm,1);paint();});
+    wrap.querySelector('#addCase').onclick=()=>{draft.cases.push({id:uid(),desc:'',amount:''});paint();};
+    wrap.querySelector('#fSS').onchange=e=>{draft.ssDeduct=e.target.checked;paint();};
+    const ssc=wrap.querySelector('#fSSCount');if(ssc) ssc.oninput=e=>{draft.ssCaseCount=e.target.value;refreshNet();};
+    wrap.querySelector('#fLab').oninput=e=>{draft.labFeeTotal=e.target.value;refreshNet();};
+    wrap.querySelector('#fNote').oninput=e=>{draft.note=e.target.value;};
+    wrap.querySelector('#cancelE').onclick=()=>{S.entryEditor=null;renderModals();};
+    wrap.querySelector('#saveE').onclick=save;
+    const del=wrap.querySelector('#delE');if(del) del.onclick=del2;
+  }
+
+  function refreshNet(){
+    const{income,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const nv=wrap.querySelector('.nv');if(nv) nv.textContent=`฿${fmt(net)}`;
+    const fo=wrap.querySelector('.formula');if(fo) fo.innerHTML=formula();
+    const ct=wrap.querySelector('.cases-total');
+    if(ct) ct.innerHTML=`<span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(income)}</span>`;
+    const sc=wrap.querySelector('.ss-calc');
+    if(sc) sc.innerHTML=`<span>${ssCases} เคส × ฿${SS_PER_CASE}</span><span class="sv">−฿${fmt(ss)}</span>`;
+    const lc=wrap.querySelector('.lab-calc');
+    if(lc) lc.innerHTML=`<span>หมอออก ${LAB_SPLIT_PCT}% (คลินิก ${100-LAB_SPLIT_PCT}%)</span><span class="lv">−฿${fmt(labShare)}</span>`;
+  }
+
+  function save(){
+    if(!draft.clinicId){alert('กรุณาเลือกคลินิก');return;}
+    const clean={...draft,cases:draft.cases.map(c=>({...c,amount:Number(c.amount)||0})),dfPct:Number(draft.dfPct)||0,labFeeTotal:Number(draft.labFeeTotal)||0,ssCaseCount:Number(draft.ssCaseCount)||0};
+    const list=entries[ctx.date]||[];
+    const idx=list.findIndex(e=>e.id===clean.id);
+    if(idx>=0) list[idx]=clean; else list.push(clean);
+    entries[ctx.date]=list;saveE(entries);S.entryEditor=null;renderModals();renderContent();
+  }
+  function del2(){
+    if(!confirm('ลบรายการนี้?')) return;
+    entries[ctx.date]=(entries[ctx.date]||[]).filter(e=>e.id!==draft.id);
+    if(!entries[ctx.date].length) delete entries[ctx.date];
+    saveE(entries);S.entryEditor=null;renderModals();renderContent();
+  }
+  paint(); return wrap;
+}
+
+/* Clinic editor */
+function buildClinicEditor(c){
+  const wrap=document.createElement('div');
+  wrap.className='overlay';
+  wrap.onclick=ev=>{if(ev.target===wrap){S.clinicEditor=null;renderModals();}};
+  let d={...c};const isNew=!d.id;
+  function paint(){
+    wrap.innerHTML=`
+      <div class="modal">
+        <div class="modal-h"><h2>${isNew?'เพิ่มคลินิก':'แก้ไขคลินิก'}</h2></div>
+        <div class="field"><label>ชื่อคลินิก</label><input type="text" id="cN" value="${d.name}" placeholder="ชื่อคลินิก"/></div>
+        <div class="field">
+          <label>DF % ของคลินิกนี้ (ค่าตั้งต้น)</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="number" id="cDF" value="${d.dfPct||0}" min="0" max="100" style="width:90px;border:2px solid var(--blue);border-radius:9px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;text-align:center;color:var(--blue);background:#fff;"/>
+            <span style="font-size:12px;color:var(--blue);opacity:.6;">% จาก Gross — ปรับได้ทีละรายการ</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>สีประจำคลินิก</label>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;">
+            ${PAL.map(p=>`<div data-col="${p}" style="width:32px;height:32px;border-radius:8px;background:${p};cursor:pointer;border:3px solid ${d.color===p?'var(--blue)':'transparent'};transition:.1s;"></div>`).join('')}
+          </div>
+        </div>
+        <div class="ss-box" style="margin-bottom:10px;">
+          <div class="ss-top">
+            <div><div class="ss-label">หักปกส. เป็นค่าตั้งต้น</div><div class="ss-hint">฿${SS_PER_CASE} × เคส ปกส. — ปรับได้ทีละวัน</div></div>
+            <label class="switch"><input type="checkbox" id="cSS"${d.ssDeduct?' checked':''}><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="ss-box">
+          <div class="ss-top">
+            <div><div class="ss-label">ได้ค่าฟิล์มเอ็กซเรย์</div><div class="ss-hint">บันทึกเป็นข้อมูล ไม่นำไปคำนวณ</div></div>
+            <label class="switch"><input type="checkbox" id="cXr"${d.xrayFee?' checked':''}><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="cancelC">ยกเลิก</button>
+          <button class="btn btn-primary" id="saveC">บันทึก</button>
+        </div>
+      </div>`;
+    wrap.querySelectorAll('[data-col]').forEach(el=>el.onclick=()=>{d.color=el.dataset.col;paint();});
+    wrap.querySelector('#cN').oninput=e=>d.name=e.target.value;
+    wrap.querySelector('#cDF').oninput=e=>d.dfPct=Number(e.target.value)||0;
+    wrap.querySelector('#cSS').onchange=e=>d.ssDeduct=e.target.checked;
+    wrap.querySelector('#cXr').onchange=e=>d.xrayFee=e.target.checked;
+    wrap.querySelector('#cancelC').onclick=()=>{S.clinicEditor=null;renderModals();};
+    wrap.querySelector('#saveC').onclick=()=>{
+      if(!d.name.trim()){alert('กรุณาใส่ชื่อคลินิก');return;}
+      const clean={...d,id:d.id||uid()};
+      const idx=clinics.findIndex(c=>c.id===clean.id);
+      if(idx>=0) clinics[idx]=clean; else clinics.push(clean);
+      saveC(clinics);S.clinicEditor=null;renderModals();renderContent();
+    };
+  }
+  paint(); return wrap;
+}
+
+render();
+</script>
+</body>
+</html>
