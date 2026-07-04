@@ -149,6 +149,39 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 }
 
 .card{background:var(--cream);border-radius:18px;padding:20px 22px;margin-bottom:14px;}
+
+/* Clinic filter chips (calendar tab) */
+.clinic-filter{
+  display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;
+}
+.cf-chip{
+  display:flex;align-items:center;gap:6px;
+  border:none;border-radius:999px;padding:7px 13px;
+  background:rgba(237,234,217,.16);color:var(--cream);
+  font-family:'Sarabun',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;transition:.15s;
+}
+.cf-chip:hover{background:rgba(237,234,217,.28);}
+.cf-chip.active{background:var(--cream);color:var(--blue);}
+.cf-chip .cdot{width:7px;height:7px;}
+
+/* Quick DF summary strip below calendar */
+.quick-df{
+  background:var(--cream);border-radius:16px;padding:16px 18px;margin-top:12px;
+}
+.qd-title{font-size:12px;font-weight:800;color:var(--blue);opacity:.6;letter-spacing:.3px;margin-bottom:10px;}
+.qd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;}
+.qd-item{
+  display:flex;flex-direction:column;gap:3px;
+  border:1.5px solid rgba(43,43,224,.2);border-radius:10px;padding:9px 11px;
+}
+.qd-item.hilite{background:var(--blue);border-color:var(--blue);}
+.qd-item.hilite .qd-l{color:rgba(237,234,217,.7);}
+.qd-item.hilite .qd-v{color:var(--cream);}
+.qd-l{font-size:10px;font-weight:700;color:var(--blue);opacity:.55;letter-spacing:.3px;}
+.qd-v{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;color:var(--blue);}
+.qd-v.neg{color:var(--red);}
+
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
 .stat{border:2px solid var(--blue);border-radius:12px;padding:13px 14px;background:var(--cream);}
 .stat .sl{font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;}
@@ -510,7 +543,7 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all'};
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const fmt=n=>(Number(n)||0).toLocaleString('en-US');
@@ -588,7 +621,8 @@ function renderCalendar(el){
   const y=S.y,m=S.m;
   const startDow=new Date(y,m,1).getDay();
   const dim=new Date(y,m+1,0).getDate();
-  const me=monthE(y,m);
+  const filt=S.clinicFilter;
+  const me=monthE(y,m).filter(e=>filt==='all'||e.clinicId===filt);
   const netMap={};
   me.forEach(e=>{const{net}=calc(e);netMap[e.date]=(netMap[e.date]||0)+net;});
   const maxNet=Math.max(1,...Object.values(netMap));
@@ -598,7 +632,7 @@ function renderCalendar(el){
   for(let i=0;i<startDow;i++) cells+=`<div class="cell empty"></div>`;
   for(let d=1;d<=dim;d++){
     const date=ds(y,m,d);
-    const de=dayE(date);
+    const de=dayE(date).filter(e=>filt==='all'||e.clinicId===filt);
     const net=netMap[date]||0;
     const pct=de.length?Math.max(6,Math.min(100,net/maxNet*100)):0;
     const dots=de.map(e=>{const c=byId(e.clinicId);return`<span class="cdot" style="background:${c?c.color:'#aaa'}"></span>`;}).join('');
@@ -613,6 +647,14 @@ function renderCalendar(el){
   const total=startDow+dim;
   const rem=(7-total%7)%7;
   for(let i=0;i<rem;i++) cells+=`<div class="cell empty"></div>`;
+
+  // Quick DF summary for the filtered set
+  let qGross=0,qDf=0,qSS=0,qLab=0,qNet=0,qCases=0;
+  me.forEach(e=>{
+    const{gross,dfIncome,ss,labShare,net,totalCases}=calc(e);
+    qGross+=gross;qDf+=dfIncome;qSS+=ss;qLab+=labShare;qNet+=net;qCases+=totalCases;
+  });
+  const qDays=new Set(me.map(e=>e.date)).size;
 
   el.innerHTML=`
     <div class="cal-wrap">
@@ -631,10 +673,29 @@ function renderCalendar(el){
         <div class="weekdays">${WD.map(w=>`<div>${w}</div>`).join('')}</div>
         <div class="daygrid">${cells}</div>
       </div>
+    </div>
+    <div class="clinic-filter">
+      <button class="cf-chip ${filt==='all'?'active':''}" data-filt="all">ทั้งหมด</button>
+      ${clinics.map(c=>`
+        <button class="cf-chip ${filt===c.id?'active':''}" data-filt="${c.id}">
+          <span class="cdot" style="background:${c.color}"></span>${c.name}
+        </button>`).join('')}
+    </div>
+    <div class="quick-df">
+      <div class="qd-title">${filt==='all'?'สรุป DF คร่าวๆ ทั้งเดือน':'สรุป DF คร่าวๆ · '+(byId(filt)?.name||'')}</div>
+      <div class="qd-grid">
+        <div class="qd-item"><span class="qd-l">วันทำ</span><span class="qd-v">${qDays} วัน</span></div>
+        <div class="qd-item"><span class="qd-l">เคส</span><span class="qd-v">${qCases}</span></div>
+        <div class="qd-item"><span class="qd-l">Gross</span><span class="qd-v">฿${fmt(qGross)}</span></div>
+        <div class="qd-item"><span class="qd-l">DF Income</span><span class="qd-v">฿${fmt(qDf)}</span></div>
+        <div class="qd-item"><span class="qd-l">หักปกส./แลป</span><span class="qd-v neg">−฿${fmt(qSS+qLab)}</span></div>
+        <div class="qd-item hilite"><span class="qd-l">สุทธิ</span><span class="qd-v">฿${fmt(qNet)}</span></div>
+      </div>
     </div>`;
   el.querySelector('#pM').onclick=()=>shiftM(-1);
   el.querySelector('#nM').onclick=()=>shiftM(1);
   el.querySelectorAll('.cell[data-date]').forEach(c=>c.onclick=()=>{S.dayModal=c.dataset.date;renderModals();});
+  el.querySelectorAll('.cf-chip').forEach(b=>b.onclick=()=>{S.clinicFilter=b.dataset.filt;renderContent();});
 }
 function shiftM(d){let m=S.m+d,y=S.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}S.m=m;S.y=y;renderContent();}
 
@@ -760,7 +821,7 @@ function buildDayModal(date){
             <div class="ec-top">
               <div>
                 <div class="ec-name"><span class="cdot" style="background:${c?c.color:'#aaa'}"></span>${c?c.name:'(ลบแล้ว)'}</div>
-                <div class="ec-meta">${e.shift==='evening'?'🌆 ช่วงเย็น':'☀️ ทั้งวัน'} · ${totalCases} เคส · Gross ฿${fmt(gross)} → DF${dfPct}% = ฿${fmt(dfIncome)}</div>
+                <div class="ec-meta">${e.shift==='evening'?'🌌 ช่วงเย็น':'☀️ ทั้งวัน'} · ${totalCases} เคส · Gross ฿${fmt(gross)} → DF${dfPct}% = ฿${fmt(dfIncome)}</div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <div class="ec-net">฿${fmt(net)}</div>
@@ -841,7 +902,7 @@ function buildEntryEditor(ctx){
         <div class="field">
           <label>ช่วงที่ทำ</label>
           <div class="seg">
-            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}">🌆 ช่วงเย็น</button>
+            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}">🌌 ช่วงเย็น</button>
             <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}">☀️ ทั้งวัน</button>
           </div>
         </div>
