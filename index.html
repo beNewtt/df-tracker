@@ -684,8 +684,6 @@ function renderCalendar(el){
     <div class="quick-df">
       <div class="qd-title">${filt==='all'?'สรุป DF คร่าวๆ ทั้งเดือน':'สรุป DF คร่าวๆ · '+(byId(filt)?.name||'')}</div>
       <div class="qd-grid">
-        <div class="qd-item"><span class="qd-l">วันทำ</span><span class="qd-v">${qDays} วัน</span></div>
-        <div class="qd-item"><span class="qd-l">เคส</span><span class="qd-v">${qCases}</span></div>
         <div class="qd-item"><span class="qd-l">Gross</span><span class="qd-v">฿${fmt(qGross)}</span></div>
         <div class="qd-item"><span class="qd-l">DF Income</span><span class="qd-v">฿${fmt(qDf)}</span></div>
         <div class="qd-item"><span class="qd-l">หักปกส./แลป</span><span class="qd-v neg">−฿${fmt(qSS+qLab)}</span></div>
@@ -762,7 +760,6 @@ function renderSummary(el){
     <div class="stat-grid">
       <div class="stat"><div class="sl">Gross รวม</div><div class="sv">฿${fmt(tGross)}</div></div>
       <div class="stat"><div class="sl">รายได้ DF</div><div class="sv">฿${fmt(tDfIncome)}</div></div>
-      <div class="stat deduct"><div class="sl">หักปกส.</div><div class="sv">฿${fmt(tSS)}</div></div>
       <div class="stat deduct"><div class="sl">หารค่าแลป ${LAB_SPLIT_PCT}%</div><div class="sv">฿${fmt(tLab)}</div></div>
       <div class="stat hilite"><div class="sl">รายได้สุทธิ</div><div class="sv">฿${fmt(tNet)}</div></div>
       <div class="stat"><div class="sl">วันที่ลงทำ</div><div class="sv">${days} วัน</div></div>
@@ -770,17 +767,15 @@ function renderSummary(el){
     <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก</div>
     ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">📅</div>ยังไม่มีข้อมูลเดือนนี้</div>`:`
     <table>
-      <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">เคส</th><th class="r">Gross</th><th class="r">DF Income</th><th class="r">ปกส.</th><th class="r">แลป</th><th class="r">สุทธิ</th></tr></thead>
+      <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">Gross</th><th class="r">DF Income</th><th class="r">แลป</th><th class="r">สุทธิ</th></tr></thead>
       <tbody>
         ${Object.entries(byC).map(([id,b])=>{
           const c=byId(id);
           return`<tr>
             <td><span class="swatch" style="background:${c?c.color:'#aaa'}"></span> ${c?c.name:'(ลบแล้ว)'}</td>
             <td class="r">${b.days.size}</td>
-            <td class="r">${b.cases}</td>
             <td class="r">฿${fmt(b.gross)}</td>
             <td class="r">฿${fmt(b.dfIncome)}</td>
-            <td class="r">฿${fmt(b.ss)}</td>
             <td class="r">฿${fmt(b.lab)}</td>
             <td class="r net-col">฿${fmt(b.net)}</td>
           </tr>`;
