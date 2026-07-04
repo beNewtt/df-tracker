@@ -25,11 +25,8 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{background:var(--blue);}
 body{font-family:'Sarabun',sans-serif;background:var(--blue);color:var(--blue);min-height:100vh;}
-
-/* ── Layout ── */
 #app{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
 
-/* ── Login screen ── */
 .login-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:22px;padding:20px;text-align:center;
@@ -54,7 +51,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--blue);color:var(--blue);m
   color:var(--cream);font-size:14px;font-weight:700;opacity:.7;
 }
 
-/* ── Topbar ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   margin-bottom:20px;gap:12px;flex-wrap:wrap;
@@ -87,10 +83,7 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#7CE0A8;flex-shrink:0;}
 .sync-dot.saving{background:#F2C14E;}
 
-/* ── Calendar card ── */
 .cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
-
-/* Big month header */
 .cal-header{
   display:flex;align-items:flex-end;justify-content:space-between;
   padding:22px 24px 18px;border-bottom:2px solid var(--blue);
@@ -107,8 +100,6 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
   letter-spacing:1px;line-height:1.1;
 }
 .cal-header .year-label{font-size:clamp(14px,2.5vw,20px);color:var(--blue);opacity:.6;margin-top:2px;font-weight:600;}
-
-/* Month nav buttons inside header */
 .mnav{display:flex;gap:6px;margin-top:10px;justify-content:flex-end;}
 .mnav button{
   width:30px;height:30px;border-radius:50%;border:2px solid var(--blue);
@@ -116,8 +107,6 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
   display:flex;align-items:center;justify-content:center;transition:.12s;
 }
 .mnav button:hover{background:var(--blue);color:var(--cream);}
-
-/* Grid */
 .cal-grid{padding:0;}
 .weekdays{
   display:grid;grid-template-columns:repeat(7,1fr);
@@ -140,10 +129,7 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .cell:hover{background:var(--blue-lt);}
 .cell.empty{cursor:default;background:rgba(43,43,224,.04);}
 .cell.empty:hover{background:rgba(43,43,224,.04);}
-.cell .dnum{
-  font-size:13px;font-weight:700;color:var(--blue);
-  text-align:right;opacity:.5;
-}
+.cell .dnum{font-size:13px;font-weight:700;color:var(--blue);text-align:right;opacity:.5;}
 .cell.has-data .dnum{opacity:1;}
 .cell.today{background:var(--blue);}
 .cell.today .dnum{color:var(--cream);opacity:1;}
@@ -162,14 +148,9 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
   background:var(--blue);transform-origin:left;opacity:.3;
 }
 
-/* ── Shared card ── */
 .card{background:var(--cream);border-radius:18px;padding:20px 22px;margin-bottom:14px;}
-
-/* ── Summary ── */
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
-.stat{
-  border:2px solid var(--blue);border-radius:12px;padding:13px 14px;background:var(--cream);
-}
+.stat{border:2px solid var(--blue);border-radius:12px;padding:13px 14px;background:var(--cream);}
 .stat .sl{font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;}
 .stat .sv{font-size:19px;font-weight:800;color:var(--blue);font-family:'IBM Plex Mono',monospace;}
 .stat.hilite{background:var(--blue);}
@@ -177,7 +158,6 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .stat.hilite .sv{color:var(--cream);}
 .stat.deduct .sv{color:var(--red);}
 
-/* Section headings */
 .sec-title{
   display:flex;align-items:center;gap:8px;
   font-size:13px;font-weight:800;color:var(--cream);
@@ -188,7 +168,6 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
   background:rgba(237,234,217,.2);color:var(--cream);padding:3px 8px;border-radius:6px;
 }
 
-/* Tables */
 table{width:100%;border-collapse:collapse;background:var(--cream);border-radius:12px;overflow:hidden;border:2px solid var(--blue);}
 th,td{padding:9px 12px;text-align:left;font-size:12px;border-bottom:1px solid rgba(43,43,224,.15);}
 th{background:var(--blue);color:var(--cream);font-weight:700;font-size:11px;letter-spacing:.3px;}
@@ -196,7 +175,6 @@ tr:last-child td{border-bottom:none;}
 td.r,th.r{text-align:right;font-family:'IBM Plex Mono',monospace;}
 td.net-col{font-weight:800;color:var(--blue);}
 
-/* Clinic cards */
 .clist{display:flex;flex-direction:column;gap:8px;}
 .ccard{
   border:2px solid var(--blue);border-radius:12px;padding:13px 15px;background:var(--cream);
@@ -207,16 +185,13 @@ td.net-col{font-weight:800;color:var(--blue);}
 .pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
 .pill{font-size:11px;padding:3px 9px;border-radius:999px;border:1.5px solid var(--blue);color:var(--blue);font-weight:600;}
 .pill.off{opacity:.4;}
-.const-banner{
-  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;
-}
+.const-banner{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .cbadge{
   font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;
   background:rgba(237,234,217,.18);color:var(--cream);padding:5px 12px;
   border-radius:8px;border:1px solid rgba(237,234,217,.3);
 }
 
-/* ── Buttons ── */
 .btn{border:none;border-radius:9px;padding:9px 16px;font-family:'Sarabun',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;}
 .btn-primary{background:var(--blue);color:var(--cream);}
 .btn-primary:hover{background:var(--blue-dk);}
@@ -229,7 +204,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 .btn-icon:hover{border-color:var(--red);color:var(--red);background:var(--red-lt);}
 .add-row{display:flex;justify-content:flex-end;margin-top:12px;}
 
-/* ── Overlay / Modal ── */
 .overlay{
   position:fixed;inset:0;background:rgba(12,12,100,.55);
   display:flex;align-items:flex-end;justify-content:center;z-index:50;
@@ -244,7 +218,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 .modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .modal-h h2{font-size:18px;font-weight:800;color:var(--blue);}
 
-/* Form */
 .field{margin-bottom:13px;}
 .field label{display:block;font-size:11px;font-weight:700;color:var(--blue);opacity:.6;margin-bottom:5px;letter-spacing:.3px;}
 .field input,.field select{
@@ -261,7 +234,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 }
 .seg button.active{background:var(--blue);color:var(--cream);}
 
-/* Case rows */
 .cases-wrap{border:2px solid var(--blue);border-radius:10px;overflow:hidden;margin-bottom:13px;}
 .cases-hd{
   display:grid;grid-template-columns:1fr 100px 30px;gap:8px;
@@ -296,7 +268,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 }
 .cases-total .tv{font-family:'IBM Plex Mono',monospace;font-size:14px;}
 
-/* SS box */
 .ss-box{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:13px;}
 .ss-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
 .ss-label{font-size:13px;font-weight:700;color:var(--blue);}
@@ -316,7 +287,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 }
 .ss-calc .sv{font-family:'IBM Plex Mono',monospace;font-size:15px;}
 
-/* Lab box */
 .lab-box{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:13px;}
 .lab-box label{font-size:11px;font-weight:700;color:var(--blue);opacity:.6;display:block;margin-bottom:5px;letter-spacing:.3px;}
 .lab-box input{
@@ -332,7 +302,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 }
 .lab-calc .lv{font-family:'IBM Plex Mono',monospace;font-size:15px;}
 
-/* Toggle */
 .switch{position:relative;width:40px;height:22px;flex-shrink:0;}
 .switch input{opacity:0;width:0;height:0;}
 .slider{position:absolute;inset:0;background:#C8C5B5;border-radius:999px;cursor:pointer;transition:.15s;}
@@ -340,7 +309,6 @@ td.net-col{font-weight:800;color:var(--blue);}
 input:checked+.slider{background:var(--blue);}
 input:checked+.slider:before{transform:translateX(18px);}
 
-/* Net preview */
 .net-box{
   background:var(--blue);border-radius:12px;padding:14px 16px;margin-top:10px;
   display:flex;justify-content:space-between;align-items:center;
@@ -351,11 +319,9 @@ input:checked+.slider:before{transform:translateX(18px);}
 .formula .neg{color:var(--red);opacity:1;}
 .formula .pos{color:var(--green);opacity:1;}
 
-/* Modal footer */
 .modal-footer{display:flex;gap:8px;margin-top:16px;}
 .modal-footer .btn{flex:1;}
 
-/* Day modal entries */
 .entry-card{border:2px solid var(--blue);border-radius:10px;padding:12px 13px;margin-bottom:8px;}
 .ec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
 .ec-name{display:flex;align-items:center;gap:6px;font-weight:800;font-size:14px;color:var(--blue);}
@@ -369,7 +335,6 @@ input:checked+.slider:before{transform:translateX(18px);}
 .ec-deduct{margin-top:6px;font-size:11px;color:var(--red);display:flex;gap:10px;flex-wrap:wrap;}
 .ec-note{margin-top:7px;font-size:12px;color:var(--blue);opacity:.6;border-top:1px solid rgba(43,43,224,.15);padding-top:6px;font-style:italic;}
 
-/* Empty state */
 .empty-state{text-align:center;color:var(--cream);opacity:.6;font-size:13px;padding:32px 10px;}
 .empty-state .big{font-size:30px;margin-bottom:6px;opacity:1;}
 .empty-state-cream{text-align:center;color:var(--blue);opacity:.5;font-size:13px;padding:28px 10px;}
@@ -430,7 +395,7 @@ function defaultClinics(){
 }
 function uid(){return Math.random().toString(36).slice(2,9);}
 
-/* ═══════════ Data (now backed by Firestore, per-user) ═══════════ */
+/* ═══════════ Data (Firestore, per-user) ═══════════ */
 let clinics=[], entries={};
 let currentUser=null;
 let clinicsLoaded=false, entriesLoaded=false;
@@ -842,8 +807,7 @@ function buildEntryEditor(ctx){
   const isNew=!ctx.entry;
   let draft=ctx.entry
     ?{...ctx.entry,cases:(ctx.entry.cases||[]).map(c=>({...c}))}
-    :{id:uid(),clinicId:clinics[0]?.id||'',shift:'fullday',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,labFeeTotal:0,note:''};
-  if(isNew&&draft.clinicId){const c=byId(draft.clinicId);if(c){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}}
+    :{id:uid(),clinicId:'',shift:'evening',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,labFeeTotal:0,note:''};
 
   function formula(){
     const{gross,dfPct,dfIncome,ssCases,ss,labShare,net}=calc(draft);
@@ -855,20 +819,23 @@ function buildEntryEditor(ctx){
   }
 
   function paint(){
-    const{income,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
     const cl=byId(draft.clinicId);
     wrap.innerHTML=`
       <div class="modal">
         <div class="modal-h"><h2>${isNew?'เพิ่มรายการ':'แก้ไขรายการ'}</h2></div>
         <div class="field">
           <label>คลินิก</label>
-          <select id="fClin">${clinics.map(c=>`<option value="${c.id}"${c.id===draft.clinicId?' selected':''}>${c.name}</option>`).join('')}</select>
+          <select id="fClin">
+            <option value=""${!draft.clinicId?' selected':''}>- เลือกคลินิก -</option>
+            ${clinics.map(c=>`<option value="${c.id}"${c.id===draft.clinicId?' selected':''}>${c.name}</option>`).join('')}
+          </select>
         </div>
         <div class="field">
           <label>DF % (สัดส่วนที่หมอได้)</label>
           <div style="display:flex;align-items:center;gap:10px;">
             <input type="number" id="fDF" value="${draft.dfPct||0}" min="0" max="100" style="width:90px;border:2px solid var(--blue);border-radius:9px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;text-align:center;color:var(--blue);background:#fff;"/>
-            <span style="font-size:13px;color:var(--blue);opacity:.6;">% จาก Gross ฿${fmt(calc(draft).gross)} = <strong>฿${fmt(calc(draft).dfIncome)}</strong></span>
+            <span style="font-size:13px;color:var(--blue);opacity:.6;">% จาก Gross ฿${fmt(gross)} = <strong>฿${fmt(dfIncome)}</strong></span>
           </div>
         </div>
         <div class="field">
@@ -888,7 +855,7 @@ function buildEntryEditor(ctx){
               <input type="number" class="camt"  data-i="${i}" value="${c.amount||''}" placeholder="0" min="0"/>
               <button class="btn-icon" data-rm="${i}">✕</button>
             </div>`).join('')}
-          ${totalCases>0?`<div class="cases-total"><span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(income)}</span></div>`:''}
+          ${totalCases>0?`<div class="cases-total"><span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(gross)}</span></div>`:''}
           <button class="add-case-btn" id="addCase">＋ เพิ่มเคส</button>
         </div>
 
@@ -924,7 +891,7 @@ function buildEntryEditor(ctx){
         </div>
 
         <div style="font-size:12px;color:var(--blue);opacity:.55;margin-top:10px;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;">
-          Gross ฿${fmt(calc(draft).gross)} × ${draft.dfPct||0}% → DF ฿${fmt(calc(draft).dfIncome)}
+          Gross ฿${fmt(gross)} × ${draft.dfPct||0}% → DF ฿${fmt(dfIncome)}
         </div>
         <div class="net-box">
           <div class="nl">รายได้สุทธิ</div>
@@ -944,7 +911,8 @@ function buildEntryEditor(ctx){
   function wire(){
     wrap.querySelector('#fClin').onchange=e=>{
       draft.clinicId=e.target.value;
-      if(isNew){const c=byId(draft.clinicId);if(c){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}}
+      const c=byId(draft.clinicId);
+      if(c && isNew){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}
       paint();
     };
     wrap.querySelector('#fDF').oninput=e=>{draft.dfPct=e.target.value;paint();};
@@ -963,11 +931,11 @@ function buildEntryEditor(ctx){
   }
 
   function refreshNet(){
-    const{income,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
     const nv=wrap.querySelector('.nv');if(nv) nv.textContent=`฿${fmt(net)}`;
     const fo=wrap.querySelector('.formula');if(fo) fo.innerHTML=formula();
     const ct=wrap.querySelector('.cases-total');
-    if(ct) ct.innerHTML=`<span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(income)}</span>`;
+    if(ct) ct.innerHTML=`<span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(gross)}</span>`;
     const sc=wrap.querySelector('.ss-calc');
     if(sc) sc.innerHTML=`<span>${ssCases} เคส × ฿${SS_PER_CASE}</span><span class="sv">−฿${fmt(ss)}</span>`;
     const lc=wrap.querySelector('.lab-calc');
