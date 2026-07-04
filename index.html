@@ -420,6 +420,42 @@ const SS_PER_CASE   = 100;
 const LAB_SPLIT_PCT = 50;
 const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
 
+/* ── 12-month rotating two-tone theme (inspired by "Two Tone Color" palette set) ── */
+const MONTH_THEMES=[
+  {blue:'#1C1C4D',cream:'#E7F7F1'}, // ม.ค. — navy & mint
+  {blue:'#178A85',cream:'#FBF6DC'}, // ก.พ. — teal & butter
+  {blue:'#2A33A8',cream:'#F4F0E4'}, // มี.ค. — indigo & ivory
+  {blue:'#8A6D00',cream:'#FFF6D8'}, // เม.ย. — gold & sunflower
+  {blue:'#C0392B',cream:'#FBEAE4'}, // พ.ค. — coral & cream
+  {blue:'#4B3B8C',cream:'#EFE6FB'}, // มิ.ย. — onyx & lilac
+  {blue:'#B5495B',cream:'#FBEAEA'}, // ก.ค. — rose & blush
+  {blue:'#6B4226',cream:'#FBEFDD'}, // ส.ค. — cocoa & peach
+  {blue:'#C2456B',cream:'#E7F1FB'}, // ก.ย. — sky & pink
+  {blue:'#1B3B36',cream:'#F7E2DA'}, // ต.ค. — pine & coral
+  {blue:'#C9701A',cream:'#E7EAFB'}, // พ.ย. — indigo & amber
+  {blue:'#B8860B',cream:'#E7E9FB'}, // ธ.ค. — navy & gold
+];
+function hexToRgb(hex){
+  const h=hex.replace('#','');
+  return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
+}
+function mixHex(hex,target,amt){
+  const c1=hexToRgb(hex),c2=hexToRgb(target);
+  const r=Math.round(c1.r+(c2.r-c1.r)*amt);
+  const g=Math.round(c1.g+(c2.g-c1.g)*amt);
+  const b=Math.round(c1.b+(c2.b-c1.b)*amt);
+  return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
+function applyMonthTheme(m){
+  const th=MONTH_THEMES[((m%12)+12)%12];
+  const root=document.documentElement.style;
+  root.setProperty('--blue',th.blue);
+  root.setProperty('--blue-dk',mixHex(th.blue,'#000000',0.25));
+  root.setProperty('--blue-lt',mixHex(th.blue,'#ffffff',0.85));
+  root.setProperty('--cream',th.cream);
+}
+
+
 function defaultClinics(){
   return [
     {id:uid(),name:'คลินิกตัวอย่าง A',color:'#1A7A60',dfPct:40,ssDeduct:true, xrayFee:false},
@@ -609,6 +645,7 @@ function syncTabs(){
 }
 
 function renderContent(){
+  applyMonthTheme(S.m);
   const el=document.getElementById('content');
   if(!el) return;
   if(S.tab==='calendar') return renderCalendar(el);
@@ -682,7 +719,7 @@ function renderCalendar(el){
         </button>`).join('')}
     </div>
     <div class="quick-df">
-      <div class="qd-title">${filt==='all'?'สรุป DF คร่าวๆ ทั้งเดือน':'สรุป DF คร่าวๆ · '+(byId(filt)?.name||'')}</div>
+      <div class="qd-title">${filt==='all'?'สรุป DF ทั้งเดือน':'สรุป DF · '+(byId(filt)?.name||'')}</div>
       <div class="qd-grid">
         <div class="qd-item"><span class="qd-l">Gross</span><span class="qd-v">฿${fmt(qGross)}</span></div>
         <div class="qd-item"><span class="qd-l">DF Income</span><span class="qd-v">฿${fmt(qDf)}</span></div>
