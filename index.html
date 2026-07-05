@@ -200,6 +200,12 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
   font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
   background:rgba(237,234,217,.2);color:var(--cream);padding:3px 8px;border-radius:6px;
 }
+.tax-note{
+  background:rgba(237,234,217,.15);border:1px solid rgba(237,234,217,.3);
+  border-radius:12px;padding:12px 14px;margin-bottom:16px;
+  font-size:12px;color:var(--cream);line-height:1.6;
+}
+.tax-note strong{color:var(--cream);}
 
 table{width:100%;border-collapse:collapse;background:var(--cream);border-radius:12px;overflow:hidden;border:2px solid var(--blue);}
 th,td{padding:9px 12px;text-align:left;font-size:12px;border-bottom:1px solid rgba(43,43,224,.15);}
@@ -418,6 +424,7 @@ const provider = new GoogleAuthProvider();
 /* ═══════════ Constants ═══════════ */
 const SS_PER_CASE   = 100;
 const LAB_SPLIT_PCT = 50;
+const WHT_PCT = 3; // หัก ณ ที่จ่าย 3% สำหรับเงินได้ 40(2)
 const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
 
 /* ── 12-month rotating two-tone theme (inspired by "Two Tone Color" palette set) ── */
@@ -458,8 +465,8 @@ function applyMonthTheme(m){
 
 function defaultClinics(){
   return [
-    {id:uid(),name:'คลินิกตัวอย่าง A',color:'#1A7A60',dfPct:40,ssDeduct:true, xrayFee:false},
-    {id:uid(),name:'คลินิกตัวอย่าง B',color:'#C9A227',dfPct:50,ssDeduct:false,xrayFee:true},
+    {id:uid(),name:'คลินิกตัวอย่าง A',color:'#1A7A60',dfPct:40,ssDeduct:true, xrayFee:false,whtDeduct:false},
+    {id:uid(),name:'คลินิกตัวอย่าง B',color:'#C9A227',dfPct:50,ssDeduct:false,xrayFee:true, whtDeduct:true},
   ];
 }
 function uid(){return Math.random().toString(36).slice(2,9);}
@@ -573,8 +580,15 @@ function renderLoading(){
 }
 
 // Handle the return trip from signInWithRedirect (e.g. on iPad Safari)
-getRedirectResult(auth).catch(err=>{
-  console.error('Redirect sign-in error:',err);
+let redirectErrShown=false;
+getRedirectResult(auth).then(result=>{
+  if(result && result.user){
+    console.log('Redirect sign-in succeeded:', result.user.uid);
+  }
+}).catch(err=>{
+  console.error('Redirect sign-in error:',err.code,err.message);
+  redirectErrShown=true;
+  renderLogin('เข้าสู่ระบบไม่สำเร็จ (redirect): ['+err.code+'] '+err.message);
 });
 
 onAuthStateChanged(auth, user=>{
@@ -591,7 +605,7 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all'};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all',taxYear:new Date().getFullYear()};
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const fmt=n=>(Number(n)||0).toLocaleString('en-US');
@@ -610,10 +624,20 @@ function calc(e){
   const labTot=Number(e.labFeeTotal)||0;
   const labShare=Math.round(labTot*LAB_SPLIT_PCT/100);
   const ss=e.ssDeduct?ssCases*SS_PER_CASE:0;
+  const wht=e.whtDeduct?Math.round(dfIncome*WHT_PCT/100):0;
   const net=dfIncome-ss-labShare;
-  return{gross,dfPct,dfIncome,totalCases,ssCases,labTot,labShare,ss,net};
+  const netAfterWht=net-wht;
+  return{gross,dfPct,dfIncome,totalCases,ssCases,labTot,labShare,ss,wht,net,netAfterWht};
 }
 function dayE(d){return entries[d]||[];}
+function yearE(y){
+  const out=[];
+  Object.keys(entries).forEach(d=>{
+    const yy=Number(d.split('-')[0]);
+    if(yy===y) entries[d].forEach(e=>out.push({date:d,...e}));
+  });
+  return out;
+}
 function monthE(y,m){
   const out=[];
   Object.keys(entries).forEach(d=>{
@@ -638,6 +662,7 @@ function renderApp(){
           <button data-tab="calendar" class="${S.tab==='calendar'?'active':''}">ปฏิทิน</button>
           <button data-tab="clinics"  class="${S.tab==='clinics' ?'active':''}">คลินิก</button>
           <button data-tab="summary"  class="${S.tab==='summary' ?'active':''}">สรุปเดือน</button>
+          <button data-tab="yearly"   class="${S.tab==='yearly'  ?'active':''}">รายปี/ภาษี</button>
         </nav>
         <div class="user-chip">
           <span class="sync-dot" id="syncDot" title="สถานะ sync"></span>
@@ -663,6 +688,7 @@ function renderContent(){
   if(S.tab==='calendar') return renderCalendar(el);
   if(S.tab==='clinics')  return renderClinics(el);
   if(S.tab==='summary')  return renderSummary(el);
+  if(S.tab==='yearly')   return renderYearly(el);
 }
 
 /* ═══════════ Calendar ═══════════ */
@@ -769,6 +795,7 @@ function renderClinics(el){
             <span class="pill">DF ${c.dfPct||0}%</span>
             <span class="pill ${c.ssDeduct?'':'off'}">${c.ssDeduct?'หักปกส.':'ไม่หักปกส.'}</span>
             <span class="pill ${c.xrayFee?'':'off'}">${c.xrayFee?'📷 ได้ค่าฟิล์ม':'ไม่ได้ค่าฟิล์ม'}</span>
+            <span class="pill ${c.whtDeduct?'':'off'}">${c.whtDeduct?`🧾 หัก ${WHT_PCT}%`:'ไม่หัก ณ ที่จ่าย'}</span>
           </div>
         </div>
         <div style="display:flex;gap:6px;">
@@ -782,7 +809,7 @@ function renderClinics(el){
     });
   }
   el.querySelector('#addC').onclick=()=>{
-    S.clinicEditor={id:null,name:'',color:PAL[clinics.length%PAL.length],dfPct:40,ssDeduct:false,xrayFee:false};renderModals();
+    S.clinicEditor={id:null,name:'',color:PAL[clinics.length%PAL.length],dfPct:40,ssDeduct:false,xrayFee:false,whtDeduct:false};renderModals();
   };
 }
 
@@ -835,7 +862,60 @@ function renderSummary(el){
   el.querySelector('#nM').onclick=()=>shiftM(1);
 }
 
-/* ═══════════ Modals ═══════════ */
+/* ═══════════ Yearly / Tax ═══════════ */
+function shiftYear(d){ S.taxYear+=d; renderContent(); }
+function renderYearly(el){
+  const y=S.taxYear;
+  const ye=yearE(y);
+  let tGross=0,tDf=0,tSS=0,tLab=0,tWht=0,tNet=0,tNetAfterWht=0;
+  const byC={};
+  ye.forEach(e=>{
+    const{gross,dfIncome,ss,labShare,wht,net,netAfterWht}=calc(e);
+    tGross+=gross;tDf+=dfIncome;tSS+=ss;tLab+=labShare;tWht+=wht;tNet+=net;tNetAfterWht+=netAfterWht;
+    byC[e.clinicId]=byC[e.clinicId]||{dfIncome:0,wht:0,net:0,netAfterWht:0,days:new Set()};
+    const b=byC[e.clinicId];
+    b.dfIncome+=dfIncome;b.wht+=wht;b.net+=net;b.netAfterWht+=netAfterWht;b.days.add(e.date);
+  });
+  const days=new Set(ye.map(e=>e.date)).size;
+
+  el.innerHTML=`
+    <div class="sec-title"><span class="badge">TAX YEAR</span> ปีภาษี ${y+543}</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn btn-ghost btn-sm" id="pY">‹ ปีก่อน</button>
+      <button class="btn btn-ghost btn-sm" id="nY">ปีหน้า ›</button>
+    </div>
+    <div class="tax-note">
+      📋 เงินได้ประเภทนี้จัดเป็น <strong>มาตรา 40(2)</strong> — ใช้ยอด "เงินได้ 40(2) รวม" ด้านล่างเป็นฐานยื่นภาษีเงินได้บุคคลธรรมดา ส่วนยอดหัก ณ ที่จ่ายใช้เป็นเครดิตภาษีตอนยื่นแบบได้
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="sl">วันที่ลงทำทั้งปี</div><div class="sv">${days} วัน</div></div>
+      <div class="stat"><div class="sl">เงินได้ 40(2) รวม</div><div class="sv">฿${fmt(tDf)}</div></div>
+      <div class="stat deduct"><div class="sl">หัก ณ ที่จ่าย ${WHT_PCT}%</div><div class="sv">฿${fmt(tWht)}</div></div>
+      <div class="stat"><div class="sl">รายได้สุทธิ (หลัง ปกส./แลป)</div><div class="sv">฿${fmt(tNet)}</div></div>
+      <div class="stat hilite"><div class="sl">คงเหลือหลังหัก ณ ที่จ่าย</div><div class="sv">฿${fmt(tNetAfterWht)}</div></div>
+    </div>
+    <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก (สำหรับยื่นภาษี)</div>
+    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">🧾</div>ยังไม่มีข้อมูลปีนี้</div>`:`
+    <table>
+      <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">เงินได้ 40(2)</th><th class="r">หัก ${WHT_PCT}%</th><th class="r">คงเหลือ</th></tr></thead>
+      <tbody>
+        ${Object.entries(byC).map(([id,b])=>{
+          const c=byId(id);
+          return`<tr>
+            <td><span class="swatch" style="background:${c?c.color:'#aaa'}"></span> ${c?c.name:'(ลบแล้ว)'}${c&&c.whtDeduct?' <span class="pill" style="font-size:9px;padding:1px 6px;">หัก 3%</span>':''}</td>
+            <td class="r">${b.days.size}</td>
+            <td class="r">฿${fmt(b.dfIncome)}</td>
+            <td class="r">฿${fmt(b.wht)}</td>
+            <td class="r net-col">฿${fmt(b.netAfterWht)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`}`;
+  el.querySelector('#pY').onclick=()=>shiftYear(-1);
+  el.querySelector('#nY').onclick=()=>shiftYear(1);
+}
+
+
 function renderModals(){
   let host=document.getElementById('mhost');
   if(!host){host=document.createElement('div');host.id='mhost';document.body.appendChild(host);}
@@ -860,7 +940,7 @@ function buildDayModal(date){
       ${!list.length?`<div class="empty-state-cream"><div class="big">🗓️</div>ยังไม่มีรายการวันนี้</div>`:
         list.map(e=>{
           const c=byId(e.clinicId);
-          const{gross,dfPct,dfIncome,totalCases,ssCases,ss,labShare,net}=calc(e);
+          const{gross,dfPct,dfIncome,totalCases,ssCases,ss,labShare,wht,net}=calc(e);
           return`<div class="entry-card">
             <div class="ec-top">
               <div>
@@ -880,10 +960,11 @@ function buildDayModal(date){
                     <span class="cv">฿${fmt(cs.amount)}</span>
                   </div>`).join('')}
               </div>`:''}
-            ${ss>0||labShare>0?`
+            ${ss>0||labShare>0||wht>0?`
               <div class="ec-deduct">
                 ${ss>0?`<span>−ปกส. ฿${fmt(ss)} (${ssCases} เคส)</span>`:''}
                 ${labShare>0?`<span>−แลป ฿${fmt(labShare)}</span>`:''}
+                ${wht>0?`<span>−หัก ณ ที่จ่าย ฿${fmt(wht)} (${WHT_PCT}%)</span>`:''}
               </div>`:''}
             ${e.note?`<div class="ec-note">📝 ${e.note}</div>`:''}
           </div>`;
@@ -912,7 +993,7 @@ function buildEntryEditor(ctx){
   const isNew=!ctx.entry;
   let draft=ctx.entry
     ?{...ctx.entry,cases:(ctx.entry.cases||[]).map(c=>({...c}))}
-    :{id:uid(),clinicId:'',shift:'evening',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,labFeeTotal:0,note:''};
+    :{id:uid(),clinicId:'',shift:'evening',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,whtDeduct:false,labFeeTotal:0,note:''};
 
   function formula(){
     const{gross,dfPct,dfIncome,ssCases,ss,labShare,net}=calc(draft);
@@ -924,7 +1005,7 @@ function buildEntryEditor(ctx){
   }
 
   function paint(){
-    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,wht,net,netAfterWht}=calc(draft);
     const cl=byId(draft.clinicId);
     wrap.innerHTML=`
       <div class="modal">
@@ -988,6 +1069,17 @@ function buildEntryEditor(ctx){
           ${labTot>0?`<div class="lab-calc"><span>หมอออก ${LAB_SPLIT_PCT}% (คลินิก ${100-LAB_SPLIT_PCT}%)</span><span class="lv">−฿${fmt(labShare)}</span></div>`:''}
         </div>
 
+        <div class="ss-box">
+          <div class="ss-top">
+            <div>
+              <div class="ss-label">หัก ณ ที่จ่าย ${WHT_PCT}% (40(2))</div>
+              <div class="ss-hint">คำนวณจาก DF Income — ใช้สำหรับสรุปยื่นภาษีรายปี</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="fWht"${draft.whtDeduct?' checked':''}><span class="slider"></span></label>
+          </div>
+          ${draft.whtDeduct&&wht>0?`<div class="ss-calc wht-calc"><span>DF ฿${fmt(dfIncome)} × ${WHT_PCT}%</span><span class="sv">−฿${fmt(wht)}</span></div>`:''}
+        </div>
+
         ${cl?.xrayFee?`<div style="margin-bottom:12px;"><span class="pill">📷 คลินิกนี้ได้ค่าฟิล์ม</span></div>`:''}
 
         <div class="field">
@@ -1017,7 +1109,7 @@ function buildEntryEditor(ctx){
     wrap.querySelector('#fClin').onchange=e=>{
       draft.clinicId=e.target.value;
       const c=byId(draft.clinicId);
-      if(c && isNew){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;}
+      if(c && isNew){draft.dfPct=c.dfPct||40;draft.ssDeduct=c.ssDeduct;draft.xrayFee=c.xrayFee;draft.whtDeduct=c.whtDeduct;}
       paint();
     };
     wrap.querySelector('#fDF').oninput=e=>{draft.dfPct=e.target.value;paint();};
@@ -1027,6 +1119,7 @@ function buildEntryEditor(ctx){
     wrap.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{draft.cases.splice(+b.dataset.rm,1);paint();});
     wrap.querySelector('#addCase').onclick=()=>{draft.cases.push({id:uid(),desc:'',amount:''});paint();};
     wrap.querySelector('#fSS').onchange=e=>{draft.ssDeduct=e.target.checked;paint();};
+    wrap.querySelector('#fWht').onchange=e=>{draft.whtDeduct=e.target.checked;paint();};
     const ssc=wrap.querySelector('#fSSCount');if(ssc) ssc.oninput=e=>{draft.ssCaseCount=e.target.value;refreshNet();};
     wrap.querySelector('#fLab').oninput=e=>{draft.labFeeTotal=e.target.value;refreshNet();};
     wrap.querySelector('#fNote').oninput=e=>{draft.note=e.target.value;};
@@ -1036,15 +1129,17 @@ function buildEntryEditor(ctx){
   }
 
   function refreshNet(){
-    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,net}=calc(draft);
+    const{gross,dfIncome,totalCases,ssCases,ss,labShare,labTot,wht,net,netAfterWht}=calc(draft);
     const nv=wrap.querySelector('.nv');if(nv) nv.textContent=`฿${fmt(net)}`;
     const fo=wrap.querySelector('.formula');if(fo) fo.innerHTML=formula();
     const ct=wrap.querySelector('.cases-total');
     if(ct) ct.innerHTML=`<span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(gross)}</span>`;
-    const sc=wrap.querySelector('.ss-calc');
+    const sc=wrap.querySelector('.ss-calc:not(.wht-calc)');
     if(sc) sc.innerHTML=`<span>${ssCases} เคส × ฿${SS_PER_CASE}</span><span class="sv">−฿${fmt(ss)}</span>`;
     const lc=wrap.querySelector('.lab-calc');
     if(lc) lc.innerHTML=`<span>หมอออก ${LAB_SPLIT_PCT}% (คลินิก ${100-LAB_SPLIT_PCT}%)</span><span class="lv">−฿${fmt(labShare)}</span>`;
+    const wc=wrap.querySelector('.wht-calc');
+    if(wc) wc.innerHTML=`<span>DF ฿${fmt(dfIncome)} × ${WHT_PCT}%</span><span class="sv">−฿${fmt(wht)}</span>`;
   }
 
   function save(){
@@ -1102,6 +1197,12 @@ function buildClinicEditor(c){
             <label class="switch"><input type="checkbox" id="cXr"${d.xrayFee?' checked':''}><span class="slider"></span></label>
           </div>
         </div>
+        <div class="ss-box">
+          <div class="ss-top">
+            <div><div class="ss-label">หัก ณ ที่จ่าย ${WHT_PCT}% (เงินได้ 40(2))</div><div class="ss-hint">คลินิกนี้หักภาษี ณ ที่จ่ายจาก DF Income หรือไม่ — ใช้สำหรับสรุปยื่นภาษี</div></div>
+            <label class="switch"><input type="checkbox" id="cWht"${d.whtDeduct?' checked':''}><span class="slider"></span></label>
+          </div>
+        </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" id="cancelC">ยกเลิก</button>
           <button class="btn btn-primary" id="saveC">บันทึก</button>
@@ -1112,6 +1213,7 @@ function buildClinicEditor(c){
     wrap.querySelector('#cDF').oninput=e=>d.dfPct=Number(e.target.value)||0;
     wrap.querySelector('#cSS').onchange=e=>d.ssDeduct=e.target.checked;
     wrap.querySelector('#cXr').onchange=e=>d.xrayFee=e.target.checked;
+    wrap.querySelector('#cWht').onchange=e=>d.whtDeduct=e.target.checked;
     wrap.querySelector('#cancelC').onclick=()=>{S.clinicEditor=null;renderModals();};
     wrap.querySelector('#saveC').onclick=()=>{
       if(!d.name.trim()){alert('กรุณาใส่ชื่อคลินิก');return;}
