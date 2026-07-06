@@ -83,6 +83,30 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#7CE0A8;flex-shrink:0;}
 .sync-dot.saving{background:#F2C14E;}
 
+/* Settings gear + dropdown panel (theme picker + logout) */
+.settings-wrap{position:relative;display:flex;align-items:center;}
+.gear-btn{
+  width:30px;height:30px;border-radius:8px;border:none;flex-shrink:0;
+  background:rgba(237,234,217,.15);color:var(--cream);font-size:15px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.gear-btn:hover{background:rgba(237,234,217,.28);}
+.settings-panel{
+  position:absolute;top:calc(100% + 10px);right:0;z-index:60;
+  width:230px;background:var(--cream);border-radius:14px;
+  padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);
+}
+.settings-panel-title{font-size:11px;font-weight:800;color:var(--blue);opacity:.6;letter-spacing:.3px;margin-bottom:8px;}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.theme-swatch{
+  aspect-ratio:1;border-radius:9px;overflow:hidden;display:flex;
+  border:2px solid transparent;cursor:pointer;padding:0;transition:.12s;
+}
+.theme-swatch:hover{transform:scale(1.05);}
+.theme-swatch.active{border-color:var(--blue);}
+.ts-half{flex:1;}
+.settings-divider{height:1px;background:rgba(43,43,224,.15);margin:12px 0;}
+
 .cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
 .cal-header{
   display:flex;align-items:flex-end;justify-content:space-between;
@@ -390,6 +414,7 @@ input:checked+.slider:before{transform:translateX(18px);}
   .cases-hd{grid-template-columns:1fr 85px 30px;}
   .case-row{grid-template-columns:1fr 85px 30px;}
   .user-chip .uname{display:none;}
+  .settings-panel{right:-10px;width:200px;}
 }
 </style>
 </head>
@@ -427,21 +452,16 @@ const LAB_SPLIT_PCT = 50;
 const WHT_PCT = 3; // หัก ณ ที่จ่าย 3% สำหรับเงินได้ 40(2)
 const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
 
-/* ── 12-month rotating two-tone theme (inspired by "Two Tone Color" palette set) ── */
-const MONTH_THEMES=[
-  {blue:'#1C1C4D',cream:'#E7F7F1'}, // ม.ค. — navy & mint
-  {blue:'#178A85',cream:'#FBF6DC'}, // ก.พ. — teal & butter
-  {blue:'#2A33A8',cream:'#F4F0E4'}, // มี.ค. — indigo & ivory
-  {blue:'#8A6D00',cream:'#FFF6D8'}, // เม.ย. — gold & sunflower
-  {blue:'#C0392B',cream:'#FBEAE4'}, // พ.ค. — coral & cream
-  {blue:'#4B3B8C',cream:'#EFE6FB'}, // มิ.ย. — onyx & lilac
-  {blue:'#B5495B',cream:'#FBEAEA'}, // ก.ค. — rose & blush
-  {blue:'#6B4226',cream:'#FBEFDD'}, // ส.ค. — cocoa & peach
-  {blue:'#C2456B',cream:'#E7F1FB'}, // ก.ย. — sky & pink
-  {blue:'#1B3B36',cream:'#F7E2DA'}, // ต.ค. — pine & coral
-  {blue:'#C9701A',cream:'#E7EAFB'}, // พ.ย. — indigo & amber
-  {blue:'#B8860B',cream:'#E7E9FB'}, // ธ.ค. — navy & gold
-];
+/* ── Theme presets (user-selectable, professional non-decorative palettes) ── */
+const THEME_KEY='dftracker-theme';
+const THEMES={
+  classic : {label:'Classic Navy',    blue:'#2B2BE0', cream:'#EDEAD9'},
+  navygold: {label:'Navy & Gold',     blue:'#131A3A', cream:'#F4EBD0'},
+  wine    : {label:'Wine & Cream',    blue:'#5C1A2B', cream:'#F5E9E4'},
+  forest  : {label:'Forest & Sand',   blue:'#1B3B36', cream:'#F1EAD8'},
+  slate   : {label:'Slate & White',   blue:'#33404D', cream:'#F5F6F7'},
+  charcoal: {label:'Charcoal & Ivory',blue:'#1E1E24', cream:'#F2F0EA'},
+};
 function hexToRgb(hex){
   const h=hex.replace('#','');
   return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
@@ -453,13 +473,19 @@ function mixHex(hex,target,amt){
   const b=Math.round(c1.b+(c2.b-c1.b)*amt);
   return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
 }
-function applyMonthTheme(m){
-  const th=MONTH_THEMES[((m%12)+12)%12];
+function loadThemeKey(){
+  const saved=localStorage.getItem(THEME_KEY);
+  return (saved && THEMES[saved]) ? saved : 'classic';
+}
+function applyTheme(key){
+  const th=THEMES[key]||THEMES.classic;
   const root=document.documentElement.style;
   root.setProperty('--blue',th.blue);
   root.setProperty('--blue-dk',mixHex(th.blue,'#000000',0.25));
   root.setProperty('--blue-lt',mixHex(th.blue,'#ffffff',0.85));
   root.setProperty('--cream',th.cream);
+  localStorage.setItem(THEME_KEY,key);
+  S.themeKey=key;
 }
 
 
@@ -605,7 +631,8 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all',taxYear:new Date().getFullYear()};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false};
+applyTheme(S.themeKey);
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const fmt=n=>(Number(n)||0).toLocaleString('en-US');
@@ -668,21 +695,60 @@ function renderApp(){
           <span class="sync-dot" id="syncDot" title="สถานะ sync"></span>
           ${u.photoURL?`<img src="${u.photoURL}" alt=""/>`:''}
           <span class="uname">${u.displayName||u.email||''}</span>
-          <button id="logoutBtn">ออกจากระบบ</button>
+          <div class="settings-wrap">
+            <button class="gear-btn" id="gearBtn" title="ตั้งค่า">⚙</button>
+            ${S.settingsOpen?buildSettingsPanel():''}
+          </div>
         </div>
       </div>
       <div id="content"></div>
     </div>`;
   app.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;renderContent();syncTabs();});
-  document.getElementById('logoutBtn').onclick=()=>signOut(auth);
+  const gearBtn=document.getElementById('gearBtn');
+  gearBtn.onclick=(ev)=>{ev.stopPropagation();S.settingsOpen=!S.settingsOpen;renderApp();};
+  wireSettingsPanel();
   renderContent(); renderModals();
 }
 function syncTabs(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===S.tab));
 }
 
+/* ═══════════ Settings panel (theme picker + logout) ═══════════ */
+function buildSettingsPanel(){
+  return `
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-panel-title">เลือกธีมสี</div>
+      <div class="theme-grid">
+        ${Object.entries(THEMES).map(([key,t])=>`
+          <button class="theme-swatch ${S.themeKey===key?'active':''}" data-theme="${key}" title="${t.label}">
+            <span class="ts-half" style="background:${t.blue}"></span>
+            <span class="ts-half" style="background:${t.cream}"></span>
+          </button>`).join('')}
+      </div>
+      <div class="settings-divider"></div>
+      <button class="btn btn-danger btn-sm" id="logoutBtn" style="width:100%;">ออกจากระบบ</button>
+    </div>`;
+}
+function wireSettingsPanel(){
+  const panel=document.getElementById('settingsPanel');
+  if(!panel) return;
+  panel.querySelectorAll('[data-theme]').forEach(b=>{
+    b.onclick=(ev)=>{
+      ev.stopPropagation();
+      applyTheme(b.dataset.theme);
+      renderApp();
+    };
+  });
+  panel.onclick=ev=>ev.stopPropagation();
+  const logoutBtn=document.getElementById('logoutBtn');
+  if(logoutBtn) logoutBtn.onclick=()=>signOut(auth);
+}
+// Close settings panel when clicking anywhere outside of it
+document.addEventListener('click',()=>{
+  if(S.settingsOpen){S.settingsOpen=false;renderApp();}
+});
+
 function renderContent(){
-  applyMonthTheme(S.m);
   const el=document.getElementById('content');
   if(!el) return;
   if(S.tab==='calendar') return renderCalendar(el);
