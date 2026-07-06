@@ -75,11 +75,6 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .user-chip{display:flex;align-items:center;gap:8px;}
 .user-chip img{width:30px;height:30px;border-radius:50%;border:2px solid var(--cream);}
 .user-chip .uname{color:var(--cream);font-size:12px;font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.user-chip button{
-  border:none;background:rgba(237,234,217,.15);color:var(--cream);
-  border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;
-}
-.user-chip button:hover{background:rgba(237,234,217,.28);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#7CE0A8;flex-shrink:0;}
 .sync-dot.saving{background:#F2C14E;}
 
@@ -93,18 +88,21 @@ nav.tabs button.active{background:var(--cream);color:var(--blue);}
 .gear-btn:hover{background:rgba(237,234,217,.28);}
 .settings-panel{
   position:absolute;top:calc(100% + 10px);right:0;z-index:60;
-  width:230px;background:var(--cream);border-radius:14px;
+  width:250px;background:var(--cream);border-radius:14px;
   padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);
 }
 .settings-panel-title{font-size:11px;font-weight:800;color:var(--blue);opacity:.6;letter-spacing:.3px;margin-bottom:8px;}
-.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.theme-swatch{
-  aspect-ratio:1;border-radius:9px;overflow:hidden;display:flex;
-  border:2px solid transparent;cursor:pointer;padding:0;transition:.12s;
+.theme-list{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;padding-right:2px;}
+.theme-btn{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;border:2px solid transparent;border-radius:12px;
+  padding:11px 14px;cursor:pointer;font-family:'Sarabun',sans-serif;
+  font-size:13px;font-weight:700;transition:.15s;text-align:left;
 }
-.theme-swatch:hover{transform:scale(1.05);}
-.theme-swatch.active{border-color:var(--blue);}
-.ts-half{flex:1;}
+.theme-btn:hover{filter:brightness(1.1);}
+.theme-btn.active{border-color:rgba(255,255,255,.85);}
+.theme-dots{display:flex;gap:5px;flex-shrink:0;}
+.theme-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4);}
 .settings-divider{height:1px;background:rgba(43,43,224,.15);margin:12px 0;}
 
 .cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
@@ -414,7 +412,7 @@ input:checked+.slider:before{transform:translateX(18px);}
   .cases-hd{grid-template-columns:1fr 85px 30px;}
   .case-row{grid-template-columns:1fr 85px 30px;}
   .user-chip .uname{display:none;}
-  .settings-panel{right:-10px;width:200px;}
+  .settings-panel{right:-10px;width:225px;}
 }
 </style>
 </head>
@@ -461,6 +459,10 @@ const THEMES={
   forest  : {label:'Forest & Sand',   blue:'#1B3B36', cream:'#F1EAD8'},
   slate   : {label:'Slate & White',   blue:'#33404D', cream:'#F5F6F7'},
   charcoal: {label:'Charcoal & Ivory',blue:'#1E1E24', cream:'#F2F0EA'},
+  plum    : {label:'Plum & Blush',    blue:'#3B1F3D', cream:'#F6E9EE'},
+  teal    : {label:'Deep Teal',       blue:'#0F3A3A', cream:'#E6F3F0'},
+  espresso: {label:'Espresso & Cream',blue:'#3A2A1E', cream:'#F5ECDD'},
+  midnight: {label:'Midnight Blue',   blue:'#0B1B3A', cream:'#E9EEF9'},
 };
 function hexToRgb(hex){
   const h=hex.replace('#','');
@@ -718,15 +720,23 @@ function buildSettingsPanel(){
   return `
     <div class="settings-panel" id="settingsPanel">
       <div class="settings-panel-title">เลือกธีมสี</div>
-      <div class="theme-grid">
-        ${Object.entries(THEMES).map(([key,t])=>`
-          <button class="theme-swatch ${S.themeKey===key?'active':''}" data-theme="${key}" title="${t.label}">
-            <span class="ts-half" style="background:${t.blue}"></span>
-            <span class="ts-half" style="background:${t.cream}"></span>
-          </button>`).join('')}
+      <div class="theme-list">
+        ${Object.entries(THEMES).map(([key,t])=>{
+          const active=S.themeKey===key;
+          const sub=mixHex(t.blue,t.cream,0.45);
+          return `
+          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.blue};color:${t.cream};">
+            <span>${t.label}</span>
+            ${active?`<span class="theme-dots">
+              <span class="theme-dot" style="background:${t.blue}"></span>
+              <span class="theme-dot" style="background:${sub}"></span>
+              <span class="theme-dot" style="background:${t.cream}"></span>
+            </span>`:''}
+          </button>`;
+        }).join('')}
       </div>
       <div class="settings-divider"></div>
-      <button class="btn btn-danger btn-sm" id="logoutBtn" style="width:100%;">ออกจากระบบ</button>
+      <button type="button" class="btn btn-danger btn-sm" id="logoutBtn" style="width:100%;">ออกจากระบบ</button>
     </div>`;
 }
 function wireSettingsPanel(){
