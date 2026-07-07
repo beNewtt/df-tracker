@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>DF Tracker · Round 3 Calendar</title>
+<title>DF Tracker · Round 4 Minimal Orange</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -668,6 +668,231 @@ input:checked+.slider:before{background:var(--text-inverse);}
   tr:hover td,.cell:hover,.btn-ghost:hover,.cf-chip:hover{background:var(--surface-hover);}
 }
 
+
+
+/* ═══════════ Round 4 · Minimal Orange Polish
+   เอาแนว Monkeytype: solid, minimal, no floating card shadow, no heavy frames
+═══════════ */
+:root{
+  --accent:#E87945;
+  --accent-hover:#D86B39;
+  --accent-soft:#EAD8CA;
+  --border:#E2D5C7;
+  --border-soft:rgba(20,53,60,.10);
+  --shadow:none;
+}
+
+*{box-shadow:none!important;}
+html,body{background:var(--bg);}
+body{color:var(--text);}
+#app{max-width:1120px;padding:22px 28px 64px;}
+
+/* top area: no card frame, no floating look */
+.topbar{
+  background:transparent!important;
+  border:none!important;
+  border-radius:0!important;
+  padding:0 0 18px!important;
+  margin-bottom:26px!important;
+}
+.brand .mark,.login-screen .mark-big{
+  background:var(--text)!important;
+  color:var(--bg)!important;
+  border:none!important;
+}
+.brand h1,.brand .sub,.user-chip .uname{color:var(--text)!important;}
+.brand .sub{opacity:.58;}
+.user-chip img{border:none!important;}
+.gear-btn{
+  background:var(--surface2)!important;
+  color:var(--text)!important;
+  border:none!important;
+}
+.gear-btn:hover{background:var(--accent)!important;color:var(--text-inverse)!important;}
+
+/* tabs: solid minimal bar */
+nav.tabs{
+  background:var(--surface2)!important;
+  border:none!important;
+  border-radius:12px!important;
+  padding:5px!important;
+}
+nav.tabs button{
+  color:var(--text-soft)!important;
+  border:none!important;
+}
+nav.tabs button.active{
+  background:var(--accent)!important;
+  color:var(--text-inverse)!important;
+}
+
+/* settings panel: flat dropdown, bigger preview, no outline */
+.settings-panel{
+  background:var(--surface2)!important;
+  border:none!important;
+  border-radius:14px!important;
+  padding:12px!important;
+  width:286px!important;
+}
+.settings-panel-title{color:var(--text-soft)!important;opacity:1!important;}
+.theme-list{gap:8px!important;max-height:360px!important;}
+.theme-btn{
+  border:none!important;
+  border-radius:10px!important;
+  padding:10px 12px!important;
+  background:var(--surface)!important;
+  color:var(--text)!important;
+}
+.theme-btn:hover{filter:none!important;background:var(--surface-hover)!important;}
+.theme-btn.active{
+  background:var(--accent)!important;
+  color:var(--text-inverse)!important;
+}
+.theme-dots{gap:6px!important;}
+.theme-dot{width:13px!important;height:13px!important;border:none!important;}
+.settings-divider{background:var(--border-soft)!important;}
+
+/* calendar: remove outer box/frame, make it breathe */
+.cal-wrap{
+  background:transparent!important;
+  border:none!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  padding:0!important;
+}
+.cal-header{
+  border:none!important;
+  padding:0 0 26px!important;
+}
+.cal-header .month-num{
+  color:var(--text)!important;
+  -webkit-text-stroke:0!important;
+  letter-spacing:-6px!important;
+  font-size:clamp(78px,13vw,120px)!important;
+}
+.cal-header .month-name{color:var(--text)!important;}
+.cal-header .year-label{color:var(--text-soft)!important;opacity:1!important;}
+.mnav button{
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--text)!important;
+  border-radius:10px!important;
+}
+.mnav button:hover{background:var(--accent)!important;color:var(--text-inverse)!important;}
+.weekdays{
+  border-bottom:1px solid var(--border-soft)!important;
+}
+.weekdays div{
+  color:var(--text-soft)!important;
+  border-right:none!important;
+  padding:10px 4px!important;
+}
+.cell{
+  border:none!important;
+  min-height:96px!important;
+  padding:18px 14px!important;
+  border-radius:12px!important;
+  background:transparent!important;
+}
+.cell:hover{background:var(--surface2)!important;}
+.cell.empty,.cell.empty:hover{background:transparent!important;opacity:.36;}
+.cell .dnum{color:var(--text)!important;opacity:1!important;font-size:15px!important;}
+.cell.today{
+  background:transparent!important;
+}
+.cell.today .dnum{
+  width:34px;height:34px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent)!important;
+  color:var(--text-inverse)!important;
+  margin-left:auto;
+}
+.cell.today:hover{background:var(--surface2)!important;}
+.cell .cbar{
+  height:2px!important;
+  border-radius:999px!important;
+  background:var(--accent)!important;
+  opacity:.72!important;
+}
+.cell .cnet{color:var(--text-soft)!important;font-size:10px!important;}
+.cdot{width:7px!important;height:7px!important;}
+
+/* summary / chips / stats: solid minimal blocks, no heavy frames */
+.clinic-filter{margin-top:22px!important;}
+.cf-chip{
+  background:var(--surface2)!important;
+  color:var(--text-soft)!important;
+  border:none!important;
+}
+.cf-chip:hover{background:var(--surface-hover)!important;color:var(--text)!important;}
+.cf-chip.active{background:var(--accent)!important;color:var(--text-inverse)!important;}
+.quick-df,.card,.stat,.ccard,.tax-note,.entry-card,.ss-box,.lab-box,.cases-wrap{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:14px!important;
+}
+.quick-df{margin-top:14px!important;padding:18px!important;}
+.qd-title,.stat .sl,.sec-title,.field label,.lab-box label{color:var(--text-soft)!important;opacity:1!important;}
+.qd-item{
+  border:none!important;
+  background:var(--surface2)!important;
+}
+.qd-item.hilite,.stat.hilite,.net-box{
+  background:var(--accent)!important;
+  border:none!important;
+}
+.qd-v,.stat .sv,.ccard .cn,.pill,td.net-col,.ec-name,.ec-net{color:var(--text)!important;}
+.qd-item.hilite .qd-l,.qd-item.hilite .qd-v,.stat.hilite .sl,.stat.hilite .sv,.net-box .nl,.net-box .nv{color:var(--text-inverse)!important;}
+
+.btn-primary{background:var(--accent)!important;color:var(--text-inverse)!important;}
+.btn-primary:hover{background:var(--accent-hover)!important;}
+.btn-ghost{
+  background:var(--surface2)!important;
+  border:none!important;
+  color:var(--text)!important;
+}
+.btn-ghost:hover{background:var(--surface-hover)!important;}
+.btn-danger{border:none!important;background:var(--danger-soft)!important;color:var(--danger)!important;}
+
+/* form/modal flat */
+.overlay{background:rgba(20,53,60,.30)!important;}
+.modal{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:18px!important;
+}
+.field input,.field select,.case-row input[type=text],.case-row input[type=number],.lab-box input,.ss-count-row input{
+  background:var(--surface2)!important;
+  border:none!important;
+  color:var(--text)!important;
+}
+.field input:focus,.field select:focus,.case-row input:focus,.lab-box input:focus{
+  outline:2px solid var(--accent)!important;
+  outline-offset:2px!important;
+}
+.seg,.cases-wrap{border:none!important;}
+.seg{background:var(--surface2)!important;border-radius:10px!important;padding:4px!important;}
+.seg button{color:var(--text-soft)!important;border-radius:8px!important;}
+.seg button.active{background:var(--accent)!important;color:var(--text-inverse)!important;}
+.cases-hd{background:var(--surface2)!important;color:var(--text-soft)!important;}
+.case-row{border-top:1px solid var(--border-soft)!important;}
+.add-case-btn{border-top:1px solid var(--border-soft)!important;color:var(--accent)!important;}
+.cases-total{background:var(--accent-soft)!important;color:var(--text)!important;border-top:none!important;}
+
+/* tables: no thick outline */
+table{border:none!important;background:var(--surface)!important;border-radius:14px!important;}
+th{background:var(--surface2)!important;color:var(--text-soft)!important;}
+td{color:var(--text)!important;border-bottom:1px solid var(--border-soft)!important;}
+tr:last-child td{border-bottom:none!important;}
+
+@media(max-width:520px){
+  #app{padding:18px 14px 50px!important;}
+  nav.tabs{width:100%;overflow-x:auto;justify-content:flex-start;}
+  .cal-header{padding-bottom:18px!important;}
+  .cell{min-height:72px!important;padding:10px 8px!important;}
+  .cell.today .dnum{width:28px;height:28px;}
+}
+
 </style>
 </head>
 <body>
@@ -705,7 +930,7 @@ const WHT_PCT = 3; // หัก ณ ที่จ่าย 3% สำหรับ�
 const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
 
 /* ── Theme presets (user-selectable, professional non-decorative palettes) ── */
-const THEME_KEY='dftracker-theme';
+const THEME_KEY='dftracker-theme-v4';
 
 /* DF Tracker v2 theme presets
    Each theme owns a full color system, then applyTheme() maps it into CSS tokens.
@@ -715,9 +940,9 @@ const THEMES={
     label:'Terrazzo',
     bg:'#F5EFE6', surface:'#EFE5D7', surface2:'#E7DAC7',
     text:'#14353C', textSoft:'#577579', textMuted:'#8EA2A4',
-    accent:'#E67C49', highlight:'#6D9194',
+    accent:'#E87945', highlight:'#6F9297',
     success:'#49756B', warning:'#C7973E', danger:'#B7523E',
-    border:'#D8C7B3', shadow:'rgba(20,53,60,.14)'
+    border:'#E2D5C7', shadow:'rgba(20,53,60,0)'
   },
   nordLight:{
     label:'Nord Light',
@@ -925,7 +1150,7 @@ function applyTheme(key){
     '--danger-soft':alphaHex(th.danger,.14),
     '--border':th.border,
     '--border-soft':alphaHex(th.text,.14),
-    '--shadow':`0 12px 36px ${th.shadow||alphaHex(th.text,.14)}`,
+    '--shadow':'none',
     '--overlay':alphaHex(th.text,.45),
 
     // compatibility vars used by old CSS during migration
