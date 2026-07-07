@@ -147,7 +147,11 @@ nav.tabs button.active{background:var(--blue);color:var(--cream);}
   background:transparent;color:var(--blue);font-size:14px;font-weight:700;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:.12s;
 }
-.mnav button:hover{background:var(--blue);color:var(--cream);}
+.mnav button:hover{
+    background:var(--blue);
+    color:var(--cream);
+    border-color:var(--blue);
+}
 .cal-grid{padding:0;}
 .weekdays{
   display:grid;grid-template-columns:repeat(7,1fr);
@@ -167,12 +171,17 @@ nav.tabs button.active{background:var(--blue);color:var(--cream);}
   position:relative;transition:.1s;
 }
 .cell:nth-child(7n){border-right:none;}
-.cell:hover{background:var(--blue-lt);}
+.cell:hover{
+    background:color-mix(in srgb,var(--blue) 10%,var(--cream));
+}
 .cell.empty{cursor:default;background:rgba(255,255,255,.04);}
 .cell.empty:hover{background:rgba(255,255,255,.04);}
 .cell .dnum{font-size:13px;font-weight:700;color:var(--blue);text-align:right;opacity:.5;}
 .cell.has-data .dnum{opacity:1;}
-.cell.today{background:var(--blue);}
+.cell.today{
+    background:var(--blue);
+    color:var(--cream);
+}
 .cell.today .dnum{color:var(--cream);opacity:1;}
 .cell.today:hover{background:var(--blue-dk);}
 .cell .cdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
@@ -274,9 +283,13 @@ td.net-col{font-weight:800;color:var(--blue);}
 
 .btn{border:none;border-radius:9px;padding:9px 16px;font-family:'Sarabun',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;}
 .btn-primary{background:var(--blue);color:var(--cream);}
-.btn-primary:hover{background:var(--blue-dk);}
+.btn-primary:hover{
+    background:var(--blue-dk);
+}
 .btn-ghost{background:transparent;border:2px solid var(--blue);color:var(--blue);}
-.btn-ghost:hover{background:var(--blue-lt);}
+.btn-ghost:hover{
+    background:color-mix(in srgb,var(--blue) 10%,var(--cream));
+}
 .btn-danger{background:transparent;border:2px solid var(--red);color:var(--red);}
 .btn-danger:hover{background:var(--red-lt);}
 .btn-sm{padding:5px 10px;font-size:12px;}
@@ -340,7 +353,9 @@ td.net-col{font-weight:800;color:var(--blue);}
   padding:9px 10px;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
   color:var(--blue);cursor:pointer;border-top:1px solid rgba(255,255,255,.15);
 }
-.add-case-btn:hover{background:var(--blue-lt);}
+.add-case-btn:hover{
+    background:color-mix(in srgb,var(--blue) 10%,var(--cream));
+}
 .cases-total{
   display:flex;justify-content:space-between;align-items:center;
   padding:8px 10px;background:var(--blue-lt);border-top:1px solid rgba(255,255,255,.2);
