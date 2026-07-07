@@ -450,34 +450,19 @@ const LAB_SPLIT_PCT = 50;
 const WHT_PCT = 3; // หัก ณ ที่จ่าย 3% สำหรับเงินได้ 40(2)
 const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE','#444'];
 
-/* ── Theme presets (palette-first, layout stays unchanged) ──
+/* ── Theme presets (user-selectable, professional non-decorative palettes) ── */
 const THEME_KEY='dftracker-theme';
-const DEFAULT_THEME='terrazzo';
 const THEMES={
-  terrazzo:{label:'Terrazzo',bg:'#F5EFE6',text:'#14353C',accent:'#E67C49',accent2:'#6D9194',surface:'#EFE5D7',surface2:'#E7DAC7',red:'#B7523E',green:'#49756B',gold:'#C58B3C'},
-  msCupcakes:{label:'Ms Cupcakes',bg:'#FFF4F8',text:'#103845',accent:'#55C7E8',accent2:'#D94C91',surface:'#F9DCE9',surface2:'#EFC8DB',red:'#C94E68',green:'#4F9B88',gold:'#D98A35'},
-  rosePineDawn:{label:'Rosé Pine Dawn',bg:'#FAF4ED',text:'#575279',accent:'#D7827E',accent2:'#907AA9',surface:'#F2E9E1',surface2:'#EADFD6',red:'#B4637A',green:'#56949F',gold:'#EA9D34'},
-  nordLight:{label:'Nord Light',bg:'#ECEFF4',text:'#2E3440',accent:'#5E81AC',accent2:'#88C0D0',surface:'#E5E9F0',surface2:'#D8DEE9',red:'#BF616A',green:'#A3BE8C',gold:'#EBCB8B'},
-  gruvboxLight:{label:'Gruvbox Light',bg:'#FBF1C7',text:'#3C3836',accent:'#D65D0E',accent2:'#458588',surface:'#EBDBB2',surface2:'#D5C4A1',red:'#CC241D',green:'#98971A',gold:'#D79921'},
-  paper:{label:'Paper',bg:'#F7F3EA',text:'#3C3A36',accent:'#557A95',accent2:'#B06F45',surface:'#EDE6DA',surface2:'#DED5C8',red:'#A6534B',green:'#5B8063',gold:'#B98F3B'},
-  matcha:{label:'Matcha',bg:'#F4F3E8',text:'#314632',accent:'#8B9E5A',accent2:'#B38756',surface:'#ECE8D5',surface2:'#E2DEC6',red:'#B85C47',green:'#557F56',gold:'#B99545'},
-  kyoto:{label:'Kyoto',bg:'#F8F2ED',text:'#4B2E2A',accent:'#C85D45',accent2:'#6A8273',surface:'#EFE2D8',surface2:'#E4D5C8',red:'#AF433A',green:'#59735E',gold:'#B98A4A'},
-  iceberg:{label:'Iceberg',bg:'#F4F8FA',text:'#243742',accent:'#3E8DBE',accent2:'#68A9B2',surface:'#ECF2F5',surface2:'#E1EBEF',red:'#C65A58',green:'#4A8A78',gold:'#D99A3D'},
-  cheesecake:{label:'Cheesecake',bg:'#FFF4D8',text:'#5B3441',accent:'#D96C75',accent2:'#8E7CC3',surface:'#F9E7C0',surface2:'#EDD6A9',red:'#B94F58',green:'#5E8C6A',gold:'#D39B28'},
-  lilacMist:{label:'Lilac Mist',bg:'#F5EDF7',text:'#493659',accent:'#B76E9F',accent2:'#7E8CC7',surface:'#EADCEB',surface2:'#DED0DF',red:'#B75A6B',green:'#5F8A79',gold:'#C7963E'},
-  tangerine:{label:'Tangerine',bg:'#FFF0E7',text:'#4C352B',accent:'#FF6B35',accent2:'#2F8F83',surface:'#F8DFD0',surface2:'#ECCBBB',red:'#C94D3B',green:'#3C806E',gold:'#D9982F'},
-  camping:{label:'Camping',bg:'#F6EBD8',text:'#3B4431',accent:'#6F8B58',accent2:'#C77B3F',surface:'#EADCC7',surface2:'#DDCDB6',red:'#B45A45',green:'#5D7D51',gold:'#C99A45'},
-  solarizedLight:{label:'Solarized Light',bg:'#FDF6E3',text:'#073642',accent:'#268BD2',accent2:'#B58900',surface:'#EEE8D5',surface2:'#DDD6C1',red:'#DC322F',green:'#859900',gold:'#B58900'},
-  modernInk:{label:'Modern Ink',bg:'#F4F1EA',text:'#15191D',accent:'#FF5A3D',accent2:'#2F8F9D',surface:'#EAE3D8',surface2:'#DDD4C7',red:'#C8463A',green:'#4D8060',gold:'#C08C2F'},
-  milkshake:{label:'Milkshake',bg:'#F7F2F5',text:'#343047',accent:'#E79AB5',accent2:'#75AADB',surface:'#EDE4EA',surface2:'#DFD3DC',red:'#C25B70',green:'#67977C',gold:'#D8A65C'},
-  nord:{label:'Nord',bg:'#2E3440',text:'#ECEFF4',accent:'#88C0D0',accent2:'#81A1C1',surface:'#3B4252',surface2:'#434C5E',red:'#BF616A',green:'#A3BE8C',gold:'#EBCB8B'},
-  dracula:{label:'Dracula',bg:'#282A36',text:'#F8F8F2',accent:'#BD93F9',accent2:'#8BE9FD',surface:'#343746',surface2:'#44475A',red:'#FF5555',green:'#50FA7B',gold:'#F1FA8C'},
-  tokyoNight:{label:'Tokyo Night',bg:'#1A1B26',text:'#C0CAF5',accent:'#7AA2F7',accent2:'#BB9AF7',surface:'#24283B',surface2:'#292E42',red:'#F7768E',green:'#9ECE6A',gold:'#E0AF68'},
-  catppuccin:{label:'Catppuccin',bg:'#1E1E2E',text:'#CDD6F4',accent:'#CBA6F7',accent2:'#89B4FA',surface:'#313244',surface2:'#45475A',red:'#F38BA8',green:'#A6E3A1',gold:'#F9E2AF'},
-  coffee:{label:'Coffee',bg:'#241A16',text:'#F4E5D2',accent:'#D08A45',accent2:'#8FB18F',surface:'#33251F',surface2:'#443128',red:'#D16A5B',green:'#86A96F',gold:'#D6A85C'},
-};
-const LEGACY_THEME_ALIASES={
-  miami:'msCupcakes',trackday:'modernInk',cyberspace:'camping',bushido:'kyoto',redsamurai:'kyoto',terminal:'nord',laser:'iceberg',sweden:'solarizedLight',watermelon:'tangerine'
+  miami     : {label:'Miami Nights',  blue:'#FF4FA3', cream:'#15121B'},
+  dracula   : {label:'Dracula',       blue:'#BD93F9', cream:'#161320'},
+  trackday  : {label:'Trackday',      blue:'#FF5F45', cream:'#14181F'},
+  cyberspace: {label:'Cyberspace',    blue:'#39E075', cream:'#0D1613'},
+  bushido   : {label:'Bushido',       blue:'#EC4C56', cream:'#171B22'},
+  redsamurai: {label:'Red Samurai',   blue:'#E0475A', cream:'#1A0F11'},
+  terminal  : {label:'Terminal',      blue:'#74E08A', cream:'#0D1210'},
+  laser     : {label:'Laser',         blue:'#38E6E6', cream:'#12111E'},
+  sweden    : {label:'Sweden',        blue:'#FFD24C', cream:'#10131C'},
+  watermelon: {label:'Watermelon',    blue:'#FF6B81', cream:'#10160F'},
 };
 function hexToRgb(hex){
   const h=hex.replace('#','');
@@ -492,39 +477,17 @@ function mixHex(hex,target,amt){
 }
 function loadThemeKey(){
   const saved=localStorage.getItem(THEME_KEY);
-  if(saved && THEMES[saved]) return saved;
-  if(saved && LEGACY_THEME_ALIASES[saved]) return LEGACY_THEME_ALIASES[saved];
-  return DEFAULT_THEME;
+  return (saved && THEMES[saved]) ? saved : 'miami';
 }
 function applyTheme(key){
-  const realKey=(THEMES[key] ? key : (LEGACY_THEME_ALIASES[key] || DEFAULT_THEME));
-  const th=THEMES[realKey]||THEMES[DEFAULT_THEME];
+  const th=THEMES[key]||THEMES.miami;
   const root=document.documentElement.style;
-
-  // Keep the original CSS variable names so the UI/layout stays unchanged.
-  // The only change is that each theme now provides a fuller color palette.
-  root.setProperty('--blue',th.text);
-  root.setProperty('--blue-dk',th.accent);
-  root.setProperty('--blue-lt',th.surface2 || mixHex(th.accent,th.bg,0.78));
-  root.setProperty('--cream',th.bg);
-  root.setProperty('--cream-dk',th.surface || mixHex(th.bg,th.text,0.08));
-  root.setProperty('--cream-dk2',th.surface2 || mixHex(th.bg,th.text,0.14));
-  root.setProperty('--red',th.red);
-  root.setProperty('--red-lt',mixHex(th.red,th.bg,0.82));
-  root.setProperty('--green',th.green);
-  root.setProperty('--green-lt',mixHex(th.green,th.bg,0.84));
-  root.setProperty('--gold',th.gold);
-
-  // Extra variables for later, but not used to change layout yet.
-  root.setProperty('--theme-bg',th.bg);
-  root.setProperty('--theme-text',th.text);
-  root.setProperty('--theme-accent',th.accent);
-  root.setProperty('--theme-accent2',th.accent2);
-  root.setProperty('--theme-surface',th.surface);
-  root.setProperty('--theme-surface2',th.surface2);
-
-  localStorage.setItem(THEME_KEY,realKey);
-  if(typeof S!=='undefined') S.themeKey=realKey;
+  root.setProperty('--blue',th.blue);
+  root.setProperty('--blue-dk',mixHex(th.blue,'#000000',0.25));
+  root.setProperty('--blue-lt',mixHex(th.blue,th.cream,0.78));
+  root.setProperty('--cream',th.cream);
+  localStorage.setItem(THEME_KEY,key);
+  S.themeKey=key;
 }
 
 
@@ -760,15 +723,15 @@ function buildSettingsPanel(){
       <div class="theme-list">
         ${Object.entries(THEMES).map(([key,t])=>{
           const active=S.themeKey===key;
+          const sub=mixHex(t.blue,t.cream,0.45);
           return `
-          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};border-color:${active?t.accent:'transparent'};">
+          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.blue};color:${t.cream};">
             <span>${t.label}</span>
-            <span class="theme-dots">
-              <span class="theme-dot" style="background:${t.bg};border-color:${t.text}"></span>
-              <span class="theme-dot" style="background:${t.text}"></span>
-              <span class="theme-dot" style="background:${t.accent}"></span>
-              <span class="theme-dot" style="background:${t.accent2}"></span>
-            </span>
+            ${active?`<span class="theme-dots">
+              <span class="theme-dot" style="background:${t.blue}"></span>
+              <span class="theme-dot" style="background:${sub}"></span>
+              <span class="theme-dot" style="background:${t.cream}"></span>
+            </span>`:''}
           </button>`;
         }).join('')}
       </div>
@@ -1343,6 +1306,7 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
+
 
 
 
