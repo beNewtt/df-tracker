@@ -488,7 +488,13 @@ const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE'
 const THEME_KEY='dftracker-theme';
 
 const THEMES={
-  terrazzo:{label:'Terrazzo', blue:'#E07A3F', cream:'#F4EBDD', dark:'#14353C', light:'#E9D7C3'},
+  terrazzo:{
+  label:'Terrazzo',
+  cream:'#F3E7D8',   // background
+  blue:'#E4784A',    // main / ปุ่ม / กล่อง active
+  dark:'#004346',    // text / header
+  light:'#DDCBBB'    // sub / inactive blocks
+},
   matcha:{label:'Matcha', blue:'#6F8755', cream:'#F3F1E4', dark:'#314632', light:'#DDE2C3'},
   coffee:{label:'Coffee', blue:'#A66A43', cream:'#F1E7D8', dark:'#3B2921', light:'#E2CDBA'},
   kyoto:{label:'Kyoto', blue:'#C75D45', cream:'#F7EDE6', dark:'#4B2E2A', light:'#E8CEC0'},
@@ -528,10 +534,10 @@ function applyTheme(key){
   const th=THEMES[key]||THEMES.terrazzo;
   const root=document.documentElement.style;
 
-  root.setProperty('--blue',th.blue);
-  root.setProperty('--blue-dk',th.dark);
-  root.setProperty('--blue-lt',th.light);
-  root.setProperty('--cream',th.cream);
+ root.setProperty('--blue',th.dark);       // text/header หลัก
+ root.setProperty('--blue-dk',th.blue);    // accent ส้ม
+ root.setProperty('--blue-lt',th.light);   // กล่อง inactive / hover
+ root.setProperty('--cream',th.cream);     // background
 
   root.setProperty('--cream-dk',mixHex(th.cream,th.dark,0.08));
   root.setProperty('--cream-dk2',mixHex(th.cream,th.dark,0.16));
