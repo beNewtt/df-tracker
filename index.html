@@ -9,17 +9,47 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --blue:#2B2BE0;
-  --blue-dk:#1C1CB8;
-  --blue-lt:#E8E8FA;
-  --cream:#EDEAD9;
-  --cream-dk:#E0DCCB;
-  --cream-dk2:#D4CFB8;
-  --red:#CC2222;
-  --red-lt:rgba(255,80,80,.14);
-  --green:#1A7A60;
-  --green-lt:#E4F0EC;
-  --gold:#C9A227;
+  /* DF Tracker v2 theme tokens */
+  --bg:#F5EFE6;
+  --surface:#EFE5D7;
+  --surface2:#E7DAC7;
+  --surface-hover:#EADCCA;
+  --surface-active:#E2D0BA;
+
+  --text:#14353C;
+  --text-soft:#577579;
+  --text-muted:#8EA2A4;
+  --text-inverse:#F5EFE6;
+
+  --accent:#E67C49;
+  --accent-hover:#D86B39;
+  --accent-soft:#F5C6AA;
+  --highlight:#6D9194;
+
+  --success:#49756B;
+  --success-soft:#DCEAE4;
+  --warning:#C7973E;
+  --warning-soft:#F2DEB6;
+  --danger:#B7523E;
+  --danger-soft:rgba(183,82,62,.14);
+
+  --border:#D8C7B3;
+  --border-soft:rgba(20,53,60,.14);
+  --shadow:0 12px 36px rgba(20,53,60,.14);
+  --overlay:rgba(20,53,60,.45);
+
+  /* backwards compatibility with old CSS */
+  --blue:var(--accent);
+  --blue-dk:var(--accent-hover);
+  --blue-lt:var(--accent-soft);
+  --cream:var(--bg);
+  --cream-dk:var(--surface);
+  --cream-dk2:var(--surface2);
+  --red:var(--danger);
+  --red-lt:var(--danger-soft);
+  --green:var(--success);
+  --green-lt:var(--success-soft);
+  --gold:var(--warning);
   --r:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -88,22 +118,23 @@ nav.tabs button.active{background:var(--blue);color:var(--cream);}
 .gear-btn:hover{background:rgba(237,234,217,.28);}
 .settings-panel{
   position:absolute;top:calc(100% + 10px);right:0;z-index:60;
-  width:250px;background:var(--cream);border-radius:14px;
-  padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);
+  width:280px;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:14px;box-shadow:var(--shadow);
 }
-.settings-panel-title{font-size:11px;font-weight:800;color:var(--blue);opacity:.6;letter-spacing:.3px;margin-bottom:8px;}
-.theme-list{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;padding-right:2px;}
+.settings-panel-title{font-size:11px;font-weight:800;color:var(--text-soft);letter-spacing:.3px;margin-bottom:8px;}
+.theme-list{display:flex;flex-direction:column;gap:7px;max-height:340px;overflow-y:auto;padding-right:2px;}
 .theme-btn{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  width:100%;border:2px solid transparent;border-radius:12px;
-  padding:11px 14px;cursor:pointer;font-family:'Sarabun',sans-serif;
-  font-size:13px;font-weight:700;transition:.15s;text-align:left;
+  width:100%;border:1.5px solid var(--border);border-radius:12px;
+  padding:10px 12px;cursor:pointer;font-family:'Sarabun',sans-serif;
+  font-size:13px;font-weight:800;transition:.15s;text-align:left;
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset;
 }
-.theme-btn:hover{filter:brightness(1.1);}
-.theme-btn.active{border-color:rgba(255,255,255,.85);}
+.theme-btn:hover{transform:translateY(-1px);filter:saturate(1.08);}
+.theme-btn.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);}
 .theme-dots{display:flex;gap:5px;flex-shrink:0;}
-.theme-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4);}
-.settings-divider{height:1px;background:rgba(255,255,255,.15);margin:12px 0;}
+.theme-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.55);}
+.settings-divider{height:1px;background:var(--border);margin:12px 0;}
 
 .cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
 .cal-header{
@@ -452,20 +483,175 @@ const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE'
 
 /* ── Theme presets (user-selectable, professional non-decorative palettes) ── */
 const THEME_KEY='dftracker-theme';
+
+/* DF Tracker v2 theme presets
+   Each theme owns a full color system, then applyTheme() maps it into CSS tokens.
+   Old vars (--blue/--cream/etc.) are still set for compatibility during the refactor rounds. */
 const THEMES={
-  miami     : {label:'Miami Nights',  blue:'#FF4FA3', cream:'#15121B'},
-  dracula   : {label:'Dracula',       blue:'#BD93F9', cream:'#161320'},
-  trackday  : {label:'Trackday',      blue:'#FF5F45', cream:'#14181F'},
-  cyberspace: {label:'Cyberspace',    blue:'#39E075', cream:'#0D1613'},
-  bushido   : {label:'Bushido',       blue:'#EC4C56', cream:'#171B22'},
-  redsamurai: {label:'Red Samurai',   blue:'#E0475A', cream:'#1A0F11'},
-  terminal  : {label:'Terminal',      blue:'#74E08A', cream:'#0D1210'},
-  laser     : {label:'Laser',         blue:'#38E6E6', cream:'#12111E'},
-  sweden    : {label:'Sweden',        blue:'#FFD24C', cream:'#10131C'},
-  watermelon: {label:'Watermelon',    blue:'#FF6B81', cream:'#10160F'},
+  terrazzo:{
+    label:'Terrazzo',
+    bg:'#F5EFE6', surface:'#EFE5D7', surface2:'#E7DAC7',
+    text:'#14353C', textSoft:'#577579', textMuted:'#8EA2A4',
+    accent:'#E67C49', highlight:'#6D9194',
+    success:'#49756B', warning:'#C7973E', danger:'#B7523E',
+    border:'#D8C7B3', shadow:'rgba(20,53,60,.14)'
+  },
+  nordLight:{
+    label:'Nord Light',
+    bg:'#EEF2F3', surface:'#FFFFFF', surface2:'#E4EAED',
+    text:'#1E2B34', textSoft:'#60717B', textMuted:'#94A3AC',
+    accent:'#2B8CC4', highlight:'#7CB7A7',
+    success:'#4C8A63', warning:'#C89C3C', danger:'#C84C4C',
+    border:'#D4DDE1', shadow:'rgba(30,43,52,.12)'
+  },
+  matcha:{
+    label:'Matcha',
+    bg:'#F4F3E8', surface:'#ECE8D5', surface2:'#E2DEC6',
+    text:'#314632', textSoft:'#5F735F', textMuted:'#8D9B8B',
+    accent:'#8B9E5A', highlight:'#B38756',
+    success:'#557F56', warning:'#B38756', danger:'#B85C47',
+    border:'#D7D5C3', shadow:'rgba(49,70,50,.13)'
+  },
+  kyoto:{
+    label:'Kyoto',
+    bg:'#F8F2ED', surface:'#EFE2D8', surface2:'#E4D5C8',
+    text:'#4B2E2A', textSoft:'#83635E', textMuted:'#B09A95',
+    accent:'#C85D45', highlight:'#6A8273',
+    success:'#59735E', warning:'#B38650', danger:'#AF433A',
+    border:'#DAC9BC', shadow:'rgba(75,46,42,.13)'
+  },
+  iceberg:{
+    label:'Iceberg',
+    bg:'#F4F8FA', surface:'#ECF2F5', surface2:'#E1EBEF',
+    text:'#243742', textSoft:'#617C8A', textMuted:'#99ADB8',
+    accent:'#3E8DBE', highlight:'#68A9B2',
+    success:'#4A8A78', warning:'#C49A42', danger:'#C65A58',
+    border:'#D5E0E5', shadow:'rgba(36,55,66,.12)'
+  },
+  paper:{
+    label:'Paper',
+    bg:'#F7F0DF', surface:'#FFF8E8', surface2:'#EDE2CA',
+    text:'#35312A', textSoft:'#756D5F', textMuted:'#A99E8D',
+    accent:'#D9814E', highlight:'#6F8F72',
+    success:'#5F825D', warning:'#C39B42', danger:'#B75A4A',
+    border:'#D7C9AF', shadow:'rgba(53,49,42,.13)'
+  },
+  rosegold:{
+    label:'Rose Gold',
+    bg:'#FFF1EF', surface:'#F8E2DE', surface2:'#EFCFC8',
+    text:'#4D3038', textSoft:'#805E67', textMuted:'#AD9198',
+    accent:'#C96C7A', highlight:'#B88A5F',
+    success:'#6E856A', warning:'#B88A5F', danger:'#B44C5F',
+    border:'#E0C0BA', shadow:'rgba(77,48,56,.13)'
+  },
+  mint:{
+    label:'Mint',
+    bg:'#EEF8F1', surface:'#FFFFFF', surface2:'#DDEFE4',
+    text:'#1D3D34', textSoft:'#5B786F', textMuted:'#91AAA1',
+    accent:'#2FAE82', highlight:'#6096B4',
+    success:'#3F8E69', warning:'#C79C3D', danger:'#C85C5C',
+    border:'#CFE4D7', shadow:'rgba(29,61,52,.12)'
+  },
+  solarizedLight:{
+    label:'Solarized Light',
+    bg:'#FDF6E3', surface:'#EEE8D5', surface2:'#E2D8BD',
+    text:'#073642', textSoft:'#586E75', textMuted:'#93A1A1',
+    accent:'#268BD2', highlight:'#B58900',
+    success:'#859900', warning:'#CB4B16', danger:'#DC322F',
+    border:'#D9CFB1', shadow:'rgba(7,54,66,.12)'
+  },
+  gruvboxLight:{
+    label:'Gruvbox Light',
+    bg:'#FBF1C7', surface:'#F2E5BC', surface2:'#EBD9A8',
+    text:'#3C3836', textSoft:'#665C54', textMuted:'#928374',
+    accent:'#D65D0E', highlight:'#458588',
+    success:'#98971A', warning:'#D79921', danger:'#CC241D',
+    border:'#D5C4A1', shadow:'rgba(60,56,54,.13)'
+  },
+  dracula:{
+    label:'Dracula',
+    bg:'#161320', surface:'#211D2E', surface2:'#2B2638',
+    text:'#F8F8F2', textSoft:'#C9C4D8', textMuted:'#8F89A5',
+    accent:'#BD93F9', highlight:'#FF79C6',
+    success:'#50FA7B', warning:'#F1FA8C', danger:'#FF5555',
+    border:'#3A3449', shadow:'rgba(0,0,0,.32)'
+  },
+  tokyoNight:{
+    label:'Tokyo Night',
+    bg:'#11121D', surface:'#1A1B2B', surface2:'#24263A',
+    text:'#C0CAF5', textSoft:'#9AA5CE', textMuted:'#6D789F',
+    accent:'#7AA2F7', highlight:'#BB9AF7',
+    success:'#9ECE6A', warning:'#E0AF68', danger:'#F7768E',
+    border:'#343854', shadow:'rgba(0,0,0,.34)'
+  },
+  catppuccin:{
+    label:'Catppuccin',
+    bg:'#1E1E2E', surface:'#282A3A', surface2:'#313244',
+    text:'#CDD6F4', textSoft:'#BAC2DE', textMuted:'#7F849C',
+    accent:'#CBA6F7', highlight:'#89B4FA',
+    success:'#A6E3A1', warning:'#F9E2AF', danger:'#F38BA8',
+    border:'#45475A', shadow:'rgba(0,0,0,.34)'
+  },
+  everforest:{
+    label:'Everforest',
+    bg:'#1E2326', surface:'#272E33', surface2:'#323C41',
+    text:'#D3C6AA', textSoft:'#A7C080', textMuted:'#859289',
+    accent:'#E67E80', highlight:'#7FBBB3',
+    success:'#A7C080', warning:'#DBBC7F', danger:'#E67E80',
+    border:'#3C4841', shadow:'rgba(0,0,0,.32)'
+  },
+  oneDark:{
+    label:'One Dark',
+    bg:'#1E222A', surface:'#282C34', surface2:'#323842',
+    text:'#ABB2BF', textSoft:'#8B93A5', textMuted:'#626A78',
+    accent:'#61AFEF', highlight:'#C678DD',
+    success:'#98C379', warning:'#E5C07B', danger:'#E06C75',
+    border:'#3E4451', shadow:'rgba(0,0,0,.34)'
+  },
+  kanagawa:{
+    label:'Kanagawa',
+    bg:'#1F1F28', surface:'#2A2A37', surface2:'#363646',
+    text:'#DCD7BA', textSoft:'#C8C093', textMuted:'#727169',
+    accent:'#7E9CD8', highlight:'#D27E99',
+    success:'#98BB6C', warning:'#E6C384', danger:'#E46876',
+    border:'#54546D', shadow:'rgba(0,0,0,.34)'
+  },
+  coffee:{
+    label:'Coffee',
+    bg:'#201713', surface:'#2B211C', surface2:'#392B24',
+    text:'#F0DFCA', textSoft:'#C7AA8A', textMuted:'#8E7660',
+    accent:'#D59B6B', highlight:'#8AA17A',
+    success:'#8AA17A', warning:'#C9A25F', danger:'#D26A5C',
+    border:'#4A382D', shadow:'rgba(0,0,0,.34)'
+  },
+  midnight:{
+    label:'Midnight',
+    bg:'#080B12', surface:'#111722', surface2:'#1A2433',
+    text:'#E6EEF8', textSoft:'#9FB1C6', textMuted:'#66788F',
+    accent:'#5DE4C7', highlight:'#7AA2F7',
+    success:'#8BE28B', warning:'#F6C177', danger:'#FF6B8A',
+    border:'#263347', shadow:'rgba(0,0,0,.38)'
+  },
+  cyberlime:{
+    label:'Cyberlime',
+    bg:'#0D1210', surface:'#141C18', surface2:'#1C2922',
+    text:'#DDFBE4', textSoft:'#9BD8A7', textMuted:'#5F8D6A',
+    accent:'#74E08A', highlight:'#39E6D0',
+    success:'#74E08A', warning:'#E6D76A', danger:'#FF647C',
+    border:'#2C3E34', shadow:'rgba(0,0,0,.34)'
+  },
+  watermelon:{
+    label:'Watermelon',
+    bg:'#10160F', surface:'#182116', surface2:'#243020',
+    text:'#F6F0EA', textSoft:'#B7D0A9', textMuted:'#7E9473',
+    accent:'#FF6B81', highlight:'#7BD88F',
+    success:'#7BD88F', warning:'#FFD166', danger:'#FF5F6D',
+    border:'#31402C', shadow:'rgba(0,0,0,.34)'
+  }
 };
+
 function hexToRgb(hex){
-  const h=hex.replace('#','');
+  const h=String(hex||'#000000').replace('#','');
   return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};
 }
 function mixHex(hex,target,amt){
@@ -475,21 +661,67 @@ function mixHex(hex,target,amt){
   const b=Math.round(c1.b+(c2.b-c1.b)*amt);
   return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
 }
+function alphaHex(hex,alpha){
+  const {r,g,b}=hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function contrastText(bg){
+  const {r,g,b}=hexToRgb(bg);
+  const lum=(0.2126*r+0.7152*g+0.0722*b)/255;
+  return lum>0.58 ? '#111827' : '#FFFFFF';
+}
+function themeSoft(th,color,amt=.78){
+  return mixHex(color, th.bg, amt);
+}
 function loadThemeKey(){
   const saved=localStorage.getItem(THEME_KEY);
-  return (saved && THEMES[saved]) ? saved : 'miami';
+  return (saved && THEMES[saved]) ? saved : 'terrazzo';
 }
 function applyTheme(key){
-  const th=THEMES[key]||THEMES.miami;
+  const th=THEMES[key]||THEMES.terrazzo;
   const root=document.documentElement.style;
-  root.setProperty('--blue',th.blue);
-  root.setProperty('--blue-dk',mixHex(th.blue,'#000000',0.25));
-  root.setProperty('--blue-lt',mixHex(th.blue,th.cream,0.78));
-  root.setProperty('--cream',th.cream);
-  localStorage.setItem(THEME_KEY,key);
-  S.themeKey=key;
-}
+  const tokens={
+    '--bg':th.bg,
+    '--surface':th.surface,
+    '--surface2':th.surface2,
+    '--surface-hover':mixHex(th.surface, th.accent, .08),
+    '--surface-active':mixHex(th.surface2, th.accent, .12),
+    '--text':th.text,
+    '--text-soft':th.textSoft,
+    '--text-muted':th.textMuted,
+    '--text-inverse':contrastText(th.accent),
+    '--accent':th.accent,
+    '--accent-hover':mixHex(th.accent,'#000000',0.16),
+    '--accent-soft':themeSoft(th,th.accent,.78),
+    '--highlight':th.highlight,
+    '--success':th.success,
+    '--success-soft':themeSoft(th,th.success,.84),
+    '--warning':th.warning,
+    '--warning-soft':themeSoft(th,th.warning,.82),
+    '--danger':th.danger,
+    '--danger-soft':alphaHex(th.danger,.14),
+    '--border':th.border,
+    '--border-soft':alphaHex(th.text,.14),
+    '--shadow':`0 12px 36px ${th.shadow||alphaHex(th.text,.14)}`,
+    '--overlay':alphaHex(th.text,.45),
 
+    // compatibility vars used by old CSS during migration
+    '--blue':th.accent,
+    '--blue-dk':mixHex(th.accent,'#000000',0.16),
+    '--blue-lt':themeSoft(th,th.accent,.78),
+    '--cream':th.bg,
+    '--cream-dk':th.surface,
+    '--cream-dk2':th.surface2,
+    '--red':th.danger,
+    '--red-lt':alphaHex(th.danger,.14),
+    '--green':th.success,
+    '--green-lt':themeSoft(th,th.success,.84),
+    '--gold':th.warning
+  };
+  Object.entries(tokens).forEach(([k,v])=>root.setProperty(k,v));
+  localStorage.setItem(THEME_KEY,key);
+  if(typeof S!=='undefined') S.themeKey=key;
+}
 
 function defaultClinics(){
   return [
@@ -723,15 +955,16 @@ function buildSettingsPanel(){
       <div class="theme-list">
         ${Object.entries(THEMES).map(([key,t])=>{
           const active=S.themeKey===key;
-          const sub=mixHex(t.blue,t.cream,0.45);
           return `
-          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.blue};color:${t.cream};">
+          <button class="theme-btn ${active?'active':''}" data-theme="${key}"
+            style="background:${t.surface};color:${t.text};border-color:${active?t.accent:t.border};">
             <span>${t.label}</span>
-            ${active?`<span class="theme-dots">
-              <span class="theme-dot" style="background:${t.blue}"></span>
-              <span class="theme-dot" style="background:${sub}"></span>
-              <span class="theme-dot" style="background:${t.cream}"></span>
-            </span>`:''}
+            <span class="theme-dots" title="${t.label}">
+              <span class="theme-dot" style="background:${t.bg}"></span>
+              <span class="theme-dot" style="background:${t.text}"></span>
+              <span class="theme-dot" style="background:${t.accent}"></span>
+              <span class="theme-dot" style="background:${t.highlight}"></span>
+            </span>
           </button>`;
         }).join('')}
       </div>
@@ -1306,7 +1539,5 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
-
-
 
 
