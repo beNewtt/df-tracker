@@ -445,6 +445,155 @@ input:checked+.slider:before{transform:translateX(18px);}
   .user-chip .uname{display:none;}
   .settings-panel{right:-10px;width:225px;}
 }
+
+
+/* ═══════════ Round 2: semantic token UI polish ═══════════ */
+html{background:var(--bg);}
+body{
+  background:
+    radial-gradient(circle at top left, var(--accent-soft), transparent 32rem),
+    radial-gradient(circle at bottom right, var(--success-soft), transparent 28rem),
+    var(--bg);
+  color:var(--text);
+  transition:background .2s ease,color .2s ease;
+}
+#app{max-width:1000px;}
+#app-inner{animation:fadeIn .18s ease-out;}
+@keyframes fadeIn{from{opacity:.75;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+.brand .mark,.login-screen .mark-big{
+  background:var(--accent);color:var(--text-inverse);
+  box-shadow:0 10px 24px var(--accent-soft);
+}
+.brand h1,.login-screen h1{color:var(--text);}
+.brand .sub,.login-screen p{color:var(--text-muted);}
+.loading-screen{color:var(--text-soft);}
+.login-err{color:var(--danger);}
+.gbtn{background:var(--surface);color:var(--text);box-shadow:var(--shadow);border:1px solid var(--border);}
+.gbtn:hover{background:var(--surface-hover);transform:translateY(-1px);}
+
+.topbar{
+  background:color-mix(in srgb, var(--surface) 78%, transparent);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:12px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(12px);
+}
+nav.tabs{background:var(--surface2);border:1px solid var(--border);}
+nav.tabs button{color:var(--text-soft);}
+nav.tabs button:hover{background:var(--surface-hover);color:var(--text);}
+nav.tabs button.active{background:var(--accent);color:var(--text-inverse);box-shadow:0 6px 16px var(--accent-soft);}
+.user-chip .uname{color:var(--text-soft);}
+.user-chip img{border-color:var(--border);}
+.sync-dot{background:var(--success);box-shadow:0 0 0 3px var(--success-soft);}
+.sync-dot.saving{background:var(--warning);box-shadow:0 0 0 3px var(--warning-soft);}
+.gear-btn{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.gear-btn:hover{background:var(--surface-hover);color:var(--accent);}
+.settings-panel{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);}
+.settings-panel-title{color:var(--text-muted);opacity:1;}
+.theme-btn{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--border) 55%, transparent);}
+.theme-btn:hover{filter:none;transform:translateY(-1px);box-shadow:0 8px 18px var(--shadow);}
+.theme-btn.active{box-shadow:0 0 0 2px var(--accent),0 10px 20px var(--accent-soft);}
+.theme-dot{border-color:color-mix(in srgb, var(--text) 16%, transparent);}
+.settings-divider{background:var(--border);}
+
+.cal-wrap,.quick-df,.card,.modal,.ccard,.entry-card,.stat,.tax-note,.cases-wrap,.ss-box,.lab-box,table{
+  background:var(--surface);
+  border-color:var(--border);
+  box-shadow:0 10px 26px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+.cal-wrap,.quick-df,.modal,.ccard,.entry-card,.stat,.tax-note,.cases-wrap,.ss-box,.lab-box,table{border:1px solid var(--border);}
+.cal-header,.weekdays{border-color:var(--border);}
+.cal-header .month-num{-webkit-text-stroke-color:var(--accent);}
+.cal-header .month-name,.cal-header .year-label,.weekdays div,.cell .dnum,.cell .cnet{color:var(--text);}
+.cal-header .year-label,.cell .dnum{opacity:.52;}
+.mnav button{border-color:var(--border);color:var(--text);background:var(--surface2);}
+.mnav button:hover{background:var(--accent);color:var(--text-inverse);border-color:var(--accent);}
+.weekdays div{border-color:var(--border-soft);}
+.cell{border-color:var(--border-soft);}
+.cell:hover{background:var(--surface-hover);}
+.cell.empty,.cell.empty:hover{background:color-mix(in srgb, var(--surface2) 42%, transparent);}
+.cell.today{background:var(--accent);}
+.cell.today .dnum,.cell.today .cnet{color:var(--text-inverse);}
+.cell.today:hover{background:var(--accent-hover);}
+.cell.today .cdot{outline-color:color-mix(in srgb, var(--text-inverse) 55%, transparent);}
+.cell .cbar{background:var(--highlight);opacity:.65;}
+
+.cf-chip{background:var(--surface2);color:var(--text-soft);border:1px solid var(--border);}
+.cf-chip:hover{background:var(--surface-hover);color:var(--text);}
+.cf-chip.active{background:var(--accent);color:var(--text-inverse);border-color:var(--accent);}
+.qd-title,.sec-title,.ccard .cn,.modal-h h2,.ec-name,.ss-label{color:var(--text);}
+.qd-title{opacity:.7;}
+.qd-item{background:var(--surface2);border-color:var(--border);}
+.qd-item.hilite{background:var(--accent);border-color:var(--accent);}
+.qd-l,.stat .sl,.field label,.lab-box label{color:var(--text-muted);opacity:1;}
+.qd-v,.stat .sv,.ec-net,td.net-col{color:var(--text);}
+.qd-item.hilite .qd-l{color:color-mix(in srgb, var(--text-inverse) 72%, transparent);}
+.qd-item.hilite .qd-v{color:var(--text-inverse);}
+.qd-v.neg,.stat.deduct .sv,.formula .neg,.ec-deduct,.ss-calc,.lab-calc{color:var(--danger);}
+.formula .pos{color:var(--success);}
+
+.sec-title .badge,.cbadge{
+  background:var(--surface2);color:var(--text-soft);border:1px solid var(--border);
+}
+.tax-note{color:var(--text-soft);}
+.tax-note strong{color:var(--text);}
+th{background:var(--accent);color:var(--text-inverse);}
+td{color:var(--text-soft);}
+th,td{border-color:var(--border-soft);}
+tr:hover td{background:var(--surface-hover);}
+.pill{border-color:var(--border);color:var(--text-soft);background:var(--surface2);}
+.pill.off{opacity:.45;}
+
+.btn{transition:transform .12s ease,background .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:var(--accent);color:var(--text-inverse);box-shadow:0 8px 18px var(--accent-soft);}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-ghost{background:var(--surface2);border-color:var(--border);color:var(--text);}
+.btn-ghost:hover{background:var(--surface-hover);border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+.btn-danger:hover{background:var(--danger);color:var(--text-inverse);}
+.btn-icon{border-color:var(--border);color:var(--text-muted);background:var(--surface2);}
+.btn-icon:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-soft);}
+
+.overlay{background:var(--overlay);backdrop-filter:blur(8px);}
+.modal{box-shadow:var(--shadow);}
+.field input,.field select,.case-row input[type=text],.case-row input[type=number],.ss-count-row input,.lab-box input{
+  background:var(--surface2);color:var(--text);border-color:var(--border);
+}
+.field input:focus,.field select:focus,.case-row input:focus,.ss-count-row input:focus,.lab-box input:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);outline:none;
+}
+.seg,.cases-wrap,.ss-box,.lab-box{border-color:var(--border);}
+.seg button{color:var(--text-soft);background:var(--surface2);}
+.seg button:hover{background:var(--surface-hover);color:var(--text);}
+.seg button.active{background:var(--accent);color:var(--text-inverse);}
+.cases-hd{background:var(--accent);color:var(--text-inverse);}
+.case-row,.add-case-btn,.cases-total,.ec-cases,.ec-note,.case-line{border-color:var(--border-soft);}
+.add-case-btn{color:var(--accent);}
+.add-case-btn:hover{background:var(--accent-soft);}
+.cases-total{background:var(--surface2);color:var(--text);}
+.ss-hint,.ec-meta,.ec-note,.formula{color:var(--text-muted);opacity:1;}
+.ss-calc,.lab-calc{background:var(--danger-soft);}
+.slider{background:var(--surface2);border:1px solid var(--border);}
+.slider:before{background:var(--text-muted);}
+input:checked+.slider{background:var(--accent);border-color:var(--accent);}
+input:checked+.slider:before{background:var(--text-inverse);}
+.net-box{background:var(--accent);}
+.net-box .nl{color:color-mix(in srgb, var(--text-inverse) 72%, transparent);}
+.net-box .nv{color:var(--text-inverse);}
+.entry-card{background:var(--surface);}
+.case-line .ca{color:var(--text-soft);}
+.case-line .cv{color:var(--text);}
+.empty-state,.empty-state-cream{color:var(--text-muted);opacity:1;}
+
+@supports not (color: color-mix(in srgb, red, blue)){
+  body{background:var(--bg);}
+  .topbar{background:var(--surface);}
+  tr:hover td,.cell:hover,.btn-ghost:hover,.cf-chip:hover{background:var(--surface-hover);}
+}
+
 </style>
 </head>
 <body>
