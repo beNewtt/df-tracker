@@ -1309,17 +1309,27 @@ const THEME_KEY='dftracker-theme';
 
 const THEMES={
   terrazzo:{
-    label:'Terrazzo',
-    bg:'#F3E7D8',
-    surface:'#DDCBBB',
-    surface2:'#D3BFAE',
-    text:'#004346',
-    subtext:'#6D8E8C',
-    accent:'#E77A4B',
-    accentHover:'#D96A3B',
-    border:'#E3D4C5',
-    danger:'#C95745'
-  },
+  label:'Terrazzo',
+
+  bg:'#F5EBDE',          // พื้นกระดาษ
+  surface:'#E3D3C4',     // กล่อง
+  surface2:'#D9C7B8',    // hover / header
+
+  text:'#0B4A4A',        // เขียวอมฟ้าเข้ม
+  subtext:'#6F8E8B',     // เขียวหม่น
+
+  accent:'#E67C49',      // ส้มหลัก
+  accentHover:'#D96A39',
+
+  secondary:'#6F8E8B',   // สีรอง
+
+  border:'#E2D5C8',
+
+  danger:'#C95A47',
+  success:'#6C8F63',
+  warning:'#D3A237',
+  highlight:'#E67C49'
+},
 
   matcha:{
     label:'Matcha',
@@ -1784,11 +1794,11 @@ function buildSettingsPanel(){
           <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};border-color:${active?t.accent:'transparent'};">
             <span>${t.label}</span>
             <span class="theme-dots">
-              <span class="theme-dot" style="background:${t.bg}"></span>
-              <span class="theme-dot" style="background:${t.surface}"></span>
-              <span class="theme-dot" style="background:${t.accent}"></span>
-              <span class="theme-dot" style="background:${t.text}"></span>
-            </span>
+    <span class="theme-dot" style="background:${t.accent}"></span>
+    <span class="theme-dot" style="background:${t.secondary}"></span>
+    <span class="theme-dot" style="background:${t.text}"></span>
+    <span class="theme-dot" style="background:${t.bg};border:1px solid rgba(0,0,0,.08)"></span>
+</span>
           </button>`;
         }).join('')}
       </div>
