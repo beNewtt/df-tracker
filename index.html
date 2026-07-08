@@ -134,10 +134,25 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 }
 }
 .theme-btn{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  width:100%;border:1.5px solid transparent;border-radius:12px;
-  padding:10px 12px;cursor:pointer;font-family:'Sarabun',sans-serif;
-  font-size:13px;font-weight:800;transition:.15s;text-align:left;
+    display:grid;
+    grid-template-columns:28px 1fr auto;
+    align-items:center;
+    gap:12px;
+
+    width:100%;
+    padding:10px 14px;
+
+    border-radius:12px;
+    border:2px solid transparent;
+
+    background:transparent;
+
+    cursor:pointer;
+    transition:.18s;
+}
+  .theme-name{
+    text-align:center;
+    font-weight:700;
 }
 .theme-btn:hover{
   transform:translateY(-1px);
@@ -1798,7 +1813,7 @@ function buildSettingsPanel(){
           const active=S.themeKey===key;
           return `
           <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};border-color:${active?t.accent:'transparent'};">
-            <span>${t.label}</span>
+            <span class="theme-name">${t.label}</span>
             <span class="theme-dots">
     <span class="theme-dot" style="background:${t.accent}"></span>
     <span class="theme-dot" style="background:${t.secondary}"></span>
