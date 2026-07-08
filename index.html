@@ -64,13 +64,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--blue);
 }
 .brand h1{font-size:18px;font-weight:800;color:var(--blue);letter-spacing:.5px;}
 .brand .sub{font-size:11px;color:rgba(237,234,217,.6);margin-top:1px;}
-nav.tabs{display:flex;gap:4px;background:rgba(237,234,217,.15);border-radius:999px;padding:4px;}
+nav.tabs{display:flex;gap:4px;background:var(--blue-lt);border-radius:999px;padding:4px;}
 nav.tabs button{
   border:none;background:transparent;padding:8px 16px;border-radius:999px;
   font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
   color:rgba(237,234,217,.7);cursor:pointer;transition:.15s;white-space:nowrap;
 }
-nav.tabs button.active{background:var(--blue);color:var(--cream);}
+nav.tabs button.active{background:var(--blue-dk);color:var(--cream);}
 
 .user-chip{display:flex;align-items:center;gap:8px;}
 .user-chip img{width:30px;height:30px;border-radius:50%;border:2px solid var(--blue);}
@@ -277,15 +277,13 @@ td.net-col{font-weight:800;color:var(--blue);}
 .const-banner{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .cbadge{
   font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;
-  background:rgba(237,234,217,.18);color:var(--cream);padding:5px 12px;
+  background:rgba(237,234,217,.18);color:var(--blue);padding:5px 12px;
   border-radius:8px;border:1px solid rgba(237,234,217,.3);
 }
 
 .btn{border:none;border-radius:9px;padding:9px 16px;font-family:'Sarabun',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;}
-.btn-primary{background:var(--blue);color:var(--cream);}
-.btn-primary:hover{
-    background:var(--blue-dk);
-}
+.btn-primary{background:var(--blue-dk);color:var(--cream);}
+.btn-primary:hover{background:var(--blue);}
 .btn-ghost{background:transparent;border:2px solid var(--blue);color:var(--blue);}
 .btn-ghost:hover{
     background:color-mix(in srgb,var(--blue) 10%,var(--cream));
