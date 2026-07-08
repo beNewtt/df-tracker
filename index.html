@@ -64,13 +64,18 @@ body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--blue);
 }
 .brand h1{font-size:18px;font-weight:800;color:var(--blue);letter-spacing:.5px;}
 .brand .sub{font-size:11px;color:rgba(237,234,217,.6);margin-top:1px;}
-nav.tabs{display:flex;gap:4px;background:var(--blue-lt);border-radius:999px;padding:4px;}
+nav.tabs{
+  display:flex;gap:4px;background:var(--blue-lt);border-radius:999px;padding:4px;
+}
 nav.tabs button{
   border:none;background:transparent;padding:8px 16px;border-radius:999px;
   font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
-  color:rgba(237,234,217,.7);cursor:pointer;transition:.15s;white-space:nowrap;
+  color:var(--green);cursor:pointer;transition:.15s;white-space:nowrap;
 }
-nav.tabs button.active{background:var(--blue-dk);color:var(--cream);}
+nav.tabs button.active{
+  background:var(--blue-dk);
+  color:var(--cream);
+}
 
 .user-chip{display:flex;align-items:center;gap:8px;}
 .user-chip img{width:30px;height:30px;border-radius:50%;border:2px solid var(--blue);}
@@ -127,7 +132,7 @@ nav.tabs button.active{background:var(--blue-dk);color:var(--cream);}
 .cal-wrap{background:var(--cream);border-radius:18px;overflow:hidden;}
 .cal-header{
   display:flex;align-items:flex-end;justify-content:space-between;
-  padding:22px 24px 18px;border-bottom:2px solid var(--blue);
+  padding:22px 24px 18px;border-bottom:2px solid var(--cream-dk2);
 }
 .cal-header .month-num{
   font-size:clamp(72px,12vw,110px);font-weight:800;line-height:1;
@@ -155,7 +160,7 @@ nav.tabs button.active{background:var(--blue-dk);color:var(--cream);}
 .cal-grid{padding:0;}
 .weekdays{
   display:grid;grid-template-columns:repeat(7,1fr);
-  border-bottom:2px solid var(--blue);
+  border-bottom:2px solid var(--cream-dk2);
 }
 .weekdays div{
   text-align:center;font-size:11px;font-weight:700;
@@ -178,12 +183,9 @@ nav.tabs button.active{background:var(--blue-dk);color:var(--cream);}
 .cell.empty:hover{background:rgba(255,255,255,.04);}
 .cell .dnum{font-size:13px;font-weight:700;color:var(--blue);text-align:right;opacity:.5;}
 .cell.has-data .dnum{opacity:1;}
-.cell.today{
-    background:var(--blue);
-    color:var(--cream);
-}
+.cell.today{background:var(--blue-dk);}
 .cell.today .dnum{color:var(--cream);opacity:1;}
-.cell.today:hover{background:var(--blue-dk);}
+.cell.today:hover{background:var(--blue);}
 .cell .cdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
 .cdot{width:6px;height:6px;border-radius:50%;}
 .cell.today .cdot{outline:1px solid rgba(237,234,217,.5);}
@@ -489,9 +491,11 @@ const THEMES={
   terrazzo:{
   label:'Terrazzo',
   cream:'#F3E7D8',   // background
-  blue:'#E4784A',    // main / ปุ่ม / กล่อง active
-  dark:'#004346',    // text / header
-  light:'#DDCBBB'    // sub / inactive blocks
+  blue:'#E77A4B',    // accent / active / button
+  dark:'#004346',    // main text / heading
+  light:'#DDCBBB',   // inactive block / surface
+  sub:'#6D8E8C',     // secondary text
+  border:'#E3D4C5'
 },
   matcha:{label:'Matcha', blue:'#6F8755', cream:'#F3F1E4', dark:'#314632', light:'#DDE2C3'},
   coffee:{label:'Coffee', blue:'#A66A43', cream:'#F1E7D8', dark:'#3B2921', light:'#E2CDBA'},
@@ -532,28 +536,23 @@ function applyTheme(key){
   const th=THEMES[key]||THEMES.terrazzo;
   const root=document.documentElement.style;
 
- root.setProperty('--blue',th.dark);       // text/header หลัก
- root.setProperty('--blue-dk',th.blue);    // accent ส้ม
- root.setProperty('--blue-lt',th.light);   // กล่อง inactive / hover
- root.setProperty('--cream',th.cream);     // background
+  root.setProperty('--cream',th.cream);
+  root.setProperty('--blue',th.dark);
+  root.setProperty('--blue-dk',th.blue);
+  root.setProperty('--blue-lt',th.light);
 
-  root.setProperty('--cream-dk',mixHex(th.cream,th.dark,0.08));
-  root.setProperty('--cream-dk2',mixHex(th.cream,th.dark,0.16));
-  root.setProperty('--green','#4F8A68');
-  root.setProperty('--green-lt',mixHex('#4F8A68',th.cream,0.78));
+  root.setProperty('--cream-dk',th.light);
+  root.setProperty('--cream-dk2',th.border||mixHex(th.cream,th.dark,0.14));
+
+  root.setProperty('--green',th.sub||'#6D8E8C');
+  root.setProperty('--green-lt',mixHex(th.sub||'#6D8E8C',th.cream,0.76));
+
   root.setProperty('--gold','#C9A227');
   root.setProperty('--red','#C95745');
   root.setProperty('--red-lt','rgba(201,87,69,.14)');
 
   localStorage.setItem(THEME_KEY,key);
   if(typeof S!=='undefined') S.themeKey=key;
-}
-
-function defaultClinics(){
-  return [
-    {id:uid(),name:'คลินิกตัวอย่าง A',color:'#1A7A60',dfPct:40,ssDeduct:true, xrayFee:false,whtDeduct:false},
-    {id:uid(),name:'คลินิกตัวอย่าง B',color:'#C9A227',dfPct:50,ssDeduct:false,xrayFee:true, whtDeduct:true},
-  ];
 }
 function uid(){return Math.random().toString(36).slice(2,9);}
 
