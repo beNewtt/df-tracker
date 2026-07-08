@@ -1781,13 +1781,13 @@ function buildSettingsPanel(){
         ${Object.entries(THEMES).map(([key,t])=>{
           const active=S.themeKey===key;
           return `
-          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.cream};color:${t.dark};">
+          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};border-color:${active?t.accent:'transparent'};">
             <span>${t.label}</span>
             <span class="theme-dots">
-              <span class="theme-dot" style="background:${t.cream}"></span>
-              <span class="theme-dot" style="background:${t.dark}"></span>
-              <span class="theme-dot" style="background:${t.blue}"></span>
-              <span class="theme-dot" style="background:${t.light}"></span>
+              <span class="theme-dot" style="background:${t.bg}"></span>
+              <span class="theme-dot" style="background:${t.surface}"></span>
+              <span class="theme-dot" style="background:${t.accent}"></span>
+              <span class="theme-dot" style="background:${t.text}"></span>
             </span>
           </button>`;
         }).join('')}
