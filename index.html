@@ -10,22 +10,22 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <style>
 :root{
-  --blue:#2B2BE0;
-  --blue-dk:#1C1CB8;
-  --blue-lt:#E8E8FA;
-  --cream:#EDEAD9;
-  --cream-dk:#E0DCCB;
-  --cream-dk2:#D4CFB8;
-  --red:#CC2222;
-  --red-lt:rgba(255,80,80,.14);
-  --green:#1A7A60;
-  --green-lt:#E4F0EC;
-  --gold:#C9A227;
-  --r:12px;
+  /* Theme tokens */
+--bg: var(--cream);
+--surface: var(--cream-dk);
+--surface2: var(--cream-dk2);
+
+--text: var(--blue);
+--subtext: var(--green);
+
+--accent: var(--blue-dk);
+--accent-hover: #D96A3B;
+
+--border: var(--cream-dk2);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{background:var(--cream);}
-body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--blue);min-height:100vh;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 #app{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
 
 .login-screen{
@@ -59,28 +59,23 @@ body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--blue);
 .brand{display:flex;align-items:center;gap:10px;}
 .brand .mark{
   width:40px;height:40px;border-radius:10px;
-  background:var(--blue);color:var(--cream);
+  background:var(--accent);color:var(--bg);
   display:flex;align-items:center;justify-content:center;
   font-weight:800;font-family:'IBM Plex Mono',monospace;font-size:13px;flex-shrink:0;
 }
-.brand h1{font-size:18px;font-weight:800;color:var(--blue);letter-spacing:.5px;}
-.brand .sub{font-size:11px;color:rgba(237,234,217,.6);margin-top:1px;}
-nav.tabs{
-  display:flex;gap:4px;background:var(--blue-lt);border-radius:999px;padding:4px;
-}
+.brand h1{font-size:18px;font-weight:800;color:var(--text);;letter-spacing:.5px;}
+.brand .sub{font-size:11px;color:var(--subtext);margin-top:1px;}
+nav.tabs{display:flex;gap:4px;background:var(--surface);border-radius:999px;padding:4px;}
 nav.tabs button{
   border:none;background:transparent;padding:8px 16px;border-radius:999px;
   font-family:'Sarabun',sans-serif;font-size:13px;font-weight:700;
-  color:var(--green);cursor:pointer;transition:.15s;white-space:nowrap;
+  color:var(--subtext);cursor:pointer;transition:.15s;white-space:nowrap;
 }
-nav.tabs button.active{
-  background:var(--blue-dk);
-  color:var(--cream);
-}
+nav.tabs button.active{background:var(--accent);color:var(--bg);}
 
 .user-chip{display:flex;align-items:center;gap:8px;}
 .user-chip img{width:30px;height:30px;border-radius:50%;border:2px solid var(--blue);}
-.user-chip .uname{color:var(--blue);font-size:12px;font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-chip .uname{color:var(--text);font-size:12px;font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#7CE0A8;flex-shrink:0;}
 .sync-dot.saving{background:#F2C14E;}
 
