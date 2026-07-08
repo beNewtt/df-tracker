@@ -134,39 +134,50 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 }
 }
 .theme-btn{
-    display:grid;
-    grid-template-columns:28px 1fr auto;
-    align-items:center;
-    gap:12px;
-
-    width:100%;
-    padding:10px 14px;
-
-    border-radius:12px;
-    border:2px solid transparent;
-
-    background:transparent;
-
-    cursor:pointer;
-    transition:.18s;
+  display:grid;
+  grid-template-columns:24px 1fr auto;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  border:2.5px solid transparent;
+  border-radius:12px;
+  padding:9px 12px;
+  cursor:pointer;
+  font-family:'Sarabun',sans-serif;
+  font-size:13px;
+  font-weight:800;
+  transition:.15s;
 }
-  .theme-name{
-    text-align:center;
-    font-weight:700;
-}
+
 .theme-btn:hover{
-  transform:translateY(-1px);
   filter:saturate(1.08);
 }
+
 .theme-btn.active{
-  border:2px solid var(--accent);
+  border-color:var(--accent);
 }
+
+.theme-star{
+  color:inherit;
+  opacity:.75;
+  font-size:14px;
+}
+
+.theme-name{
+  text-align:center;
+}
+
 .theme-dots{
-  display:flex;gap:5px;flex-shrink:0;
+  display:flex;
+  gap:7px;
+  justify-content:flex-end;
 }
+
 .theme-dot{
-  width:13px;height:13px;border-radius:50%;flex-shrink:0;
-  border:1.5px solid rgba(0,0,0,.16);
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  border:1px solid rgba(0,0,0,.16);
 }
 .settings-divider{
   height:1px;background:var(--cream-dk2);margin:12px 0;
@@ -1812,14 +1823,15 @@ function buildSettingsPanel(){
         ${Object.entries(THEMES).map(([key,t])=>{
           const active=S.themeKey===key;
           return `
-          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};border-color:${active?t.accent:'transparent'};">
+          <button class="theme-btn ${active?'active':''}" data-theme="${key}" style="background:${t.bg};color:${t.text};">
+            <span class="theme-star">${active?'★':'☆'}</span>
             <span class="theme-name">${t.label}</span>
             <span class="theme-dots">
-    <span class="theme-dot" style="background:${t.accent}"></span>
-    <span class="theme-dot" style="background:${t.secondary}"></span>
-    <span class="theme-dot" style="background:${t.text}"></span>
-    <span class="theme-dot" style="background:${t.bg};border:1px solid rgba(0,0,0,.08)"></span>
-</span>
+              <span class="theme-dot" style="background:${t.accent}"></span>
+              <span class="theme-dot" style="background:${t.secondary || t.subtext}"></span>
+              <span class="theme-dot" style="background:${t.text}"></span>
+              <span class="theme-dot" style="background:${t.bg}"></span>
+            </span>
           </button>`;
         }).join('')}
       </div>
