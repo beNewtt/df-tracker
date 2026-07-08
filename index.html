@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <style>
 :root{
   /* Theme tokens */
@@ -81,7 +82,16 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 
 /* Settings gear + dropdown panel (theme picker + logout) */
 .settings-wrap{position:relative;display:flex;align-items:center;}
-.gear-btn{
+.fa-solid{
+  font-size:13px;
+  line-height:1;
+}
+
+.icon-inline{
+  margin-right:4px;
+  color:var(--accent);
+}
+  .gear-btn{
     width:30px;
     height:30px;
     border:none;
@@ -886,8 +896,8 @@ function renderCalendar(el){
           <div class="month-name">${MN[m].toUpperCase()}.</div>
           <div class="year-label">${y+543}</div>
           <div class="mnav">
-            <button id="pM">‹</button>
-            <button id="nM">›</button>
+            <button id="pM"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="nM"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
         </div>
       </div>
@@ -929,7 +939,7 @@ function renderClinics(el){
     </div>
     <div class="sec-title"><span class="badge">CLINICS</span> รายการคลินิก</div>
     <div class="clist" id="cList"></div>
-    <div class="add-row"><button class="btn btn-primary" id="addC">+ เพิ่มคลินิก</button></div>`;
+    <div class="add-row"><button class="btn btn-primary" id="addC"><i class="fa-solid fa-plus icon-inline"></i>เพิ่มคลินิก</button></div>`;
   const list=el.querySelector('#cList');
   if(!clinics.length){
     list.innerHTML=`<div class="empty-state"><div class="big">🦷</div>ยังไม่มีคลินิก</div>`;
@@ -1092,7 +1102,11 @@ function buildDayModal(date){
             <div class="ec-top">
               <div>
                 <div class="ec-name"><span class="cdot" style="background:${c?c.color:'#aaa'}"></span>${c?c.name:'(ลบแล้ว)'}</div>
-                <div class="ec-meta">${e.shift==='evening'?'🌌 ช่วงเย็น':'☀️ ทั้งวัน'} · ${totalCases} เคส · Gross ฿${fmt(gross)} → DF${dfPct}% = ฿${fmt(dfIncome)}</div>
+                <div class="ec-meta">${
+  e.shift==='evening'
+    ? '<i class="fa-solid fa-moon icon-inline"></i>ช่วงเย็น'
+    : '<i class="fa-solid fa-sun icon-inline"></i>ทั้งวัน'
+} · ${totalCases} เคส · Gross ฿${fmt(gross)} → DF${dfPct}% = ฿${fmt(dfIncome)}</div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <div class="ec-net">฿${fmt(net)}</div>
@@ -1118,7 +1132,7 @@ function buildDayModal(date){
         }).join('')}
       <div class="modal-footer">
         <button class="btn btn-ghost" id="closeDay">ปิด</button>
-        <button class="btn btn-primary" id="addEntry">+ เพิ่มรายการ</button>
+        <button class="btn btn-primary" id="addEntry"><i class="fa-solid fa-plus icon-inline"></i>เพิ่มรายการ</button>
       </div>
     </div>`;
   wrap.querySelector('#closeDay').onclick=()=>{S.dayModal=null;renderModals();};
@@ -1186,10 +1200,10 @@ function buildEntryEditor(ctx){
             <div class="case-row">
               <input type="text" class="cdesc" data-i="${i}" placeholder="เคส ${i+1}" value="${c.desc||''}"/>
               <input type="number" class="camt"  data-i="${i}" value="${c.amount||''}" placeholder="0" min="0"/>
-              <button class="btn-icon" data-rm="${i}">✕</button>
+              <button class="btn-icon" data-rm="${i}"><i class="fa-solid fa-xmark"></i></button>
             </div>`).join('')}
           ${totalCases>0?`<div class="cases-total"><span>รวม ${totalCases} เคส</span><span class="tv">฿${fmt(gross)}</span></div>`:''}
-          <button class="add-case-btn" id="addCase">＋ เพิ่มเคส</button>
+          <button class="add-case-btn" id="addCase"><i class="fa-solid fa-plus icon-inline"></i>เพิ่มเคส</button>
         </div>
 
         <div class="ss-box">
