@@ -950,6 +950,13 @@ td.net-col{
   color:var(--bg);
 }
 
+.shift-ico{
+  margin-right:5px;
+  color:inherit;
+  font-size:13px;
+  line-height:1;
+}
+
 /* ---------- Cases ---------- */
 
 .cases-wrap{
@@ -2191,21 +2198,20 @@ function downloadClinicSlip(clinicId){
     a.cases+=r.totalCases;
     return a;
   },{gross:0,dfIncome:0,ss:0,labShare:0,wht:0,net:0,netAfterWht:0,cases:0});
-  const width=1080;
-  const rowH=66;
-  const height=Math.max(620, 310 + Math.max(rows.length,1)*rowH);
+  const width=760;
+  const rowH=56;
+  const height=Math.max(560, 320 + Math.max(rows.length,1)*rowH);
   const canvas=document.createElement('canvas');
   canvas.width=width;
   canvas.height=height;
   const ctx=canvas.getContext('2d');
-  const css=getComputedStyle(document.documentElement);
-  const bg=css.getPropertyValue('--cream').trim()||'#F5EBDE';
-  const surface=css.getPropertyValue('--cream-dk').trim()||'#E3D3C4';
-  const border=css.getPropertyValue('--cream-dk2').trim()||'#D9C7B8';
-  const text=css.getPropertyValue('--blue').trim()||'#0B4A4A';
-  const sub=css.getPropertyValue('--green').trim()||'#6F8E8B';
-  const accent=css.getPropertyValue('--blue-dk').trim()||'#E67C49';
-  const danger=css.getPropertyValue('--red').trim()||'#C95A47';
+  const bg='#FFFFFF';
+  const surface='#F2F2F2';
+  const border='#D8D8D8';
+  const text='#111111';
+  const sub='#6A6A6A';
+  const accent='#111111';
+  const danger='#111111';
   const font="'Sarabun', 'Tahoma', sans-serif";
 
   function roundRect(x,y,w,h,r,fill,stroke){
@@ -2237,40 +2243,41 @@ function downloadClinicSlip(clinicId){
 
   ctx.fillStyle=bg;
   ctx.fillRect(0,0,width,height);
-  roundRect(54,34,width-108,height-68,34,'rgba(255,255,255,.28)',border);
+  roundRect(36,30,width-72,height-60,28,bg,border);
 
-  let y=100;
-  txt('รายการตามวันที่',92,y,28,800,text);
+  let y=88;
+  txt(clinic.name,70,y,31,800,text);
+  txt(`${MN[S.m]} ${S.y+543}`,690,y,18,700,sub,'right');
   y+=34;
-  roundRect(92,y,896,52,16,surface,border);
-  txt('วันที่',120,y+34,20,800,sub);
-  txt('DF',462,y+34,20,800,sub,'right');
-  txt('แลป',620,y+34,20,800,sub,'right');
-  txt('หักอื่น',778,y+34,20,800,sub,'right');
-  txt('สุทธิ',960,y+34,20,800,sub,'right');
-  y+=66;
+  roundRect(54,y,652,48,13,surface,border);
+  txt('วันที่',74,y+31,17,800,sub);
+  txt('DF',350,y+31,17,800,sub,'right');
+  txt('แลป',470,y+31,17,800,sub,'right');
+  txt('หักอื่น',585,y+31,17,800,sub,'right');
+  txt('สุทธิ',686,y+31,17,800,sub,'right');
+  y+=62;
 
   if(!rows.length){
-    roundRect(92,y,896,116,20,'rgba(255,255,255,.22)',border);
-    txt('ยังไม่มีข้อมูลของคลินิกนี้ในเดือนที่เลือก',540,y+70,25,700,sub,'center');
-    y+=142;
+    roundRect(54,y,652,104,16,bg,border);
+    txt('ยังไม่มีข้อมูลของคลินิกนี้ในเดือนที่เลือก',380,y+64,20,700,sub,'center');
+    y+=128;
   } else {
     rows.forEach((r,i)=>{
       const other=r.ss+r.wht;
-      if(i%2===0) roundRect(92,y-39,896,58,14,'rgba(255,255,255,.18)',null);
-      txt(dateLabel(r.date),120,y,22,700,text);
-      txt(money(r.dfIncome),462,y,22,700,text,'right');
-      txt(r.labShare?'-'+money(r.labShare):money(0),620,y,22,700,r.labShare?danger:sub,'right');
-      txt(other?'-'+money(other):money(0),778,y,22,700,other?danger:sub,'right');
-      txt(money(r.net),960,y,23,800,accent,'right');
+      if(i%2===0) roundRect(54,y-33,652,48,10,'#FAFAFA',null);
+      txt(dateLabel(r.date),74,y,19,700,text);
+      txt(money(r.dfIncome),350,y,19,700,text,'right');
+      txt(r.labShare?'-'+money(r.labShare):money(0),470,y,19,700,r.labShare?danger:sub,'right');
+      txt(other?'-'+money(other):money(0),585,y,19,700,other?danger:sub,'right');
+      txt(money(r.net),686,y,20,800,accent,'right');
       y+=rowH;
     });
   }
 
-  y+=22;
-  roundRect(92,y,896,132,24,accent,null);
-  txt('รวมสุทธิ',128,y+52,27,800,bg);
-  txt(money(totals.net),952,y+58,46,800,bg,'right');
+  y+=24;
+  roundRect(54,y,652,108,18,accent,null);
+  txt('รวมสุทธิ',86,y+47,25,800,bg);
+  txt(money(totals.net),674,y+55,38,800,bg,'right');
 
   const link=document.createElement('a');
   const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
@@ -2540,8 +2547,8 @@ function buildEntryEditor(ctx){
         <div class="field">
           <label>ช่วงที่ทำ</label>
           <div class="seg">
-            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}"><span class="solid-ico"><i class="fa-solid fa-moon"></i></span>ช่วงเย็น</button>
-            <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}"><span class="solid-ico"><i class="fa-solid fa-sun"></i></span>ทั้งวัน</button>
+            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}"><i class="fa-solid fa-moon shift-ico"></i>ช่วงเย็น</button>
+            <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}"><i class="fa-solid fa-sun shift-ico"></i>ทั้งวัน</button>
           </div>
         </div>
 
@@ -2743,3 +2750,4 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
+
