@@ -29,6 +29,11 @@ html{background:var(--cream);}
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color: var(--subtext);min-height:100vh;}
 #app{max-width:960px;margin:0 auto;padding:20px 16px 60px;}
 
+.content-narrow{
+  max-width:760px;
+  margin:0 auto;
+}
+
 .login-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:22px;padding:20px;text-align:center;
@@ -587,6 +592,7 @@ td.net-col{
   display:flex;
   flex-direction:column;
   gap: 10px;
+  width:100%;
 }
 
 .ccard{
@@ -595,8 +601,21 @@ td.net-col{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  gap:10px;
+  gap:14px;
   flex-wrap:wrap;
+}
+
+.ccard-main{
+  min-width:0;
+  flex:1 1 360px;
+}
+
+.ccard-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  align-items:center;
 }
 
 .ccard .cn{
@@ -724,6 +743,32 @@ td.net-col{
   display:flex;
   justify-content:flex-end;
   margin-top:12px;
+}
+
+@media(min-width:900px){
+  #content.clinics-view{
+    max-width:760px;
+    margin:0 auto;
+  }
+
+  #content.clinics-view .ccard{
+    align-items:center;
+  }
+}
+
+@media(max-width:640px){
+  .ccard-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .add-row{
+    justify-content:stretch;
+  }
+
+  .add-row .btn{
+    width:100%;
+  }
 }
 
 /* ---------- Modal ---------- */
@@ -1954,6 +1999,7 @@ document.addEventListener('click',()=>{
 function renderContent(){
   const el=document.getElementById('content');
   if(!el) return;
+  el.className = S.tab==='clinics' ? 'clinics-view' : '';
   if(S.tab==='calendar') return renderCalendar(el);
   if(S.tab==='clinics')  return renderClinics(el);
   if(S.tab==='summary')  return renderSummary(el);
@@ -2041,6 +2087,156 @@ function renderCalendar(el){
 }
 function shiftM(d){let m=S.m+d,y=S.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}S.m=m;S.y=y;renderContent();}
 
+function clinicMonthRows(clinicId,y,m){
+  return monthE(y,m)
+    .filter(e=>e.clinicId===clinicId)
+    .sort((a,b)=>a.date.localeCompare(b.date))
+    .map(e=>{
+      const{gross,dfIncome,ss,labShare,wht,net,netAfterWht,totalCases}=calc(e);
+      return {
+        date:e.date,
+        gross,
+        dfIncome,
+        ss,
+        labShare,
+        wht,
+        net,
+        netAfterWht,
+        totalCases
+      };
+    });
+}
+
+function downloadClinicSlip(clinicId){
+  const clinic=byId(clinicId);
+  if(!clinic){ alert('ไม่พบข้อมูลคลินิก'); return; }
+  const rows=clinicMonthRows(clinicId,S.y,S.m);
+  const totals=rows.reduce((a,r)=>{
+    a.gross+=r.gross;
+    a.dfIncome+=r.dfIncome;
+    a.ss+=r.ss;
+    a.labShare+=r.labShare;
+    a.wht+=r.wht;
+    a.net+=r.net;
+    a.netAfterWht+=r.netAfterWht;
+    a.cases+=r.totalCases;
+    return a;
+  },{gross:0,dfIncome:0,ss:0,labShare:0,wht:0,net:0,netAfterWht:0,cases:0});
+  const uniqueDays=new Set(rows.map(r=>r.date)).size;
+  const width=1080;
+  const rowH=66;
+  const height=Math.max(1260, 760 + rows.length*rowH);
+  const canvas=document.createElement('canvas');
+  canvas.width=width;
+  canvas.height=height;
+  const ctx=canvas.getContext('2d');
+  const css=getComputedStyle(document.documentElement);
+  const bg=css.getPropertyValue('--cream').trim()||'#F5EBDE';
+  const surface=css.getPropertyValue('--cream-dk').trim()||'#E3D3C4';
+  const border=css.getPropertyValue('--cream-dk2').trim()||'#D9C7B8';
+  const text=css.getPropertyValue('--blue').trim()||'#0B4A4A';
+  const sub=css.getPropertyValue('--green').trim()||'#6F8E8B';
+  const accent=css.getPropertyValue('--blue-dk').trim()||'#E67C49';
+  const danger=css.getPropertyValue('--red').trim()||'#C95A47';
+  const font="'Sarabun', 'Tahoma', sans-serif";
+
+  function roundRect(x,y,w,h,r,fill,stroke){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y,x+r,y);
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
+  }
+  function txt(s,x,y,size=28,weight=600,color=text,align='left'){
+    ctx.font=`${weight} ${size}px ${font}`;
+    ctx.fillStyle=color;
+    ctx.textAlign=align;
+    ctx.textBaseline='alphabetic';
+    ctx.fillText(String(s),x,y);
+  }
+  function money(n){return '฿'+fmt(n);}
+  function dateLabel(d){
+    const[yy,mm,dd]=d.split('-').map(Number);
+    return `${dd} ${MN[mm-1].slice(0,3)} ${yy+543}`;
+  }
+  function chip(label,x,y,w,color=accent){
+    roundRect(x,y,w,42,13,color,null);
+    txt(label,x+w/2,y+29,20,800,bg,'center');
+  }
+
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,width,height);
+  roundRect(54,54,width-108,height-108,34,'rgba(255,255,255,.26)',border);
+  roundRect(86,86,width-172,118,26,accent,null);
+  txt('DF TRACKER',128,135,28,800,bg);
+  txt('Clinic income slip',128,174,21,600,'rgba(255,255,255,.78)');
+  txt(`${MN[S.m]} ${S.y+543}`,width-128,154,30,800,bg,'right');
+
+  txt(clinic.name,92,268,45,800,text);
+  chip(`DF ${clinic.dfPct||0}%`,92,300,116);
+  chip(`${uniqueDays} วัน`,222,300,100,sub);
+  chip(`${totals.cases} เคส`,336,300,112,sub);
+
+  const cards=[
+    ['DF ที่ได้',totals.dfIncome,92,382],
+    ['แลปที่หัก',totals.labShare,554,382],
+    ['หัก ปกส.',totals.ss,92,526],
+    ['สุทธิรวม',totals.net,554,526]
+  ];
+  cards.forEach(([label,val,x,y],i)=>{
+    roundRect(x,y,404,112,22,surface,border);
+    txt(label,x+28,y+38,22,700,sub);
+    txt(money(val),x+28,y+84,38,800,i===3?accent:text);
+  });
+
+  let y=704;
+  txt('รายการตามวันที่',92,y,28,800,text);
+  y+=34;
+  roundRect(92,y,896,52,16,surface,border);
+  txt('วันที่',120,y+34,20,800,sub);
+  txt('DF',462,y+34,20,800,sub,'right');
+  txt('แลป',620,y+34,20,800,sub,'right');
+  txt('หักอื่น',778,y+34,20,800,sub,'right');
+  txt('สุทธิ',960,y+34,20,800,sub,'right');
+  y+=66;
+
+  if(!rows.length){
+    roundRect(92,y,896,116,20,'rgba(255,255,255,.22)',border);
+    txt('ยังไม่มีข้อมูลของคลินิกนี้ในเดือนที่เลือก',540,y+70,25,700,sub,'center');
+    y+=142;
+  } else {
+    rows.forEach((r,i)=>{
+      const other=r.ss+r.wht;
+      if(i%2===0) roundRect(92,y-39,896,58,14,'rgba(255,255,255,.18)',null);
+      txt(dateLabel(r.date),120,y,22,700,text);
+      txt(money(r.dfIncome),462,y,22,700,text,'right');
+      txt(r.labShare?'-'+money(r.labShare):money(0),620,y,22,700,r.labShare?danger:sub,'right');
+      txt(other?'-'+money(other):money(0),778,y,22,700,other?danger:sub,'right');
+      txt(money(r.net),960,y,23,800,accent,'right');
+      y+=rowH;
+    });
+  }
+
+  y+=22;
+  roundRect(92,y,896,132,24,accent,null);
+  txt('รวมสุทธิ',128,y+52,27,800,bg);
+  txt(money(totals.net),952,y+58,46,800,bg,'right');
+  txt(`Gross ${money(totals.gross)} · DF ${money(totals.dfIncome)} · Lab -${money(totals.labShare)} · WHT -${money(totals.wht)}`,128,y+96,20,600,'rgba(255,255,255,.78)');
+
+  const link=document.createElement('a');
+  const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
+  link.download=`df-slip-${safeName}-${S.y}-${pad2(S.m+1)}.jpg`;
+  link.href=canvas.toDataURL('image/jpeg',0.92);
+  link.click();
+}
+
 /* ═══════════ Clinics ═══════════ */
 function renderClinics(el){
   el.innerHTML=`
@@ -2058,7 +2254,7 @@ function renderClinics(el){
   } else {
     list.innerHTML=clinics.map(c=>`
       <div class="ccard">
-        <div>
+        <div class="ccard-main">
           <div class="cn"><span class="swatch" style="background:${c.color}"></span>${c.name}</div>
           <div class="pills">
             <span class="pill">DF ${c.dfPct||0}%</span>
@@ -2067,11 +2263,13 @@ function renderClinics(el){
             <span class="pill ${c.whtDeduct?'':'off'}">${c.whtDeduct?`🧾 หัก ${WHT_PCT}%`:'ไม่หัก ณ ที่จ่าย'}</span>
           </div>
         </div>
-        <div style="display:flex;gap:6px;">
+        <div class="ccard-actions">
+          <button class="btn btn-primary btn-sm" data-x="${c.id}">Export JPG</button>
           <button class="btn btn-ghost btn-sm" data-e="${c.id}">แก้ไข</button>
           <button class="btn btn-danger btn-sm" data-d="${c.id}">ลบ</button>
         </div>
       </div>`).join('');
+    list.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>downloadClinicSlip(b.dataset.x));
     list.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{S.clinicEditor={...byId(b.dataset.e)};renderModals();});
     list.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
       if(confirm('ลบคลินิกนี้?')){saveC(clinics.filter(c=>c.id!==b.dataset.d));renderClinics(el);}
@@ -2503,6 +2701,4 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
-
-
 
