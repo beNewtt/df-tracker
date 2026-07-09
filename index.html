@@ -655,6 +655,41 @@ td.net-col{
   opacity:.45;
 }
 
+.solid-ico{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:1.45em;
+  min-width:1.45em;
+  height:1.45em;
+  border-radius:.45em;
+  background:currentColor;
+  color:var(--bg);
+  margin-right:.35em;
+  vertical-align:-.22em;
+}
+
+.solid-ico i{
+  color:var(--bg);
+  font-size:.74em;
+  line-height:1;
+  margin:0;
+}
+
+.big .solid-ico{
+  width:44px;
+  height:44px;
+  min-width:44px;
+  border-radius:14px;
+  margin:0 auto 8px;
+  color:var(--subtext);
+  font-size:28px;
+}
+
+.big .solid-ico i{
+  font-size:20px;
+}
+
 /* ---------- Constant ---------- */
 
 .const-banner{
@@ -2157,10 +2192,9 @@ function downloadClinicSlip(clinicId){
     a.cases+=r.totalCases;
     return a;
   },{gross:0,dfIncome:0,ss:0,labShare:0,wht:0,net:0,netAfterWht:0,cases:0});
-  const uniqueDays=new Set(rows.map(r=>r.date)).size;
   const width=1080;
   const rowH=66;
-  const height=Math.max(1260, 760 + rows.length*rowH);
+  const height=Math.max(620, 310 + Math.max(rows.length,1)*rowH);
   const canvas=document.createElement('canvas');
   canvas.width=width;
   canvas.height=height;
@@ -2199,39 +2233,14 @@ function downloadClinicSlip(clinicId){
   function money(n){return '฿'+fmt(n);}
   function dateLabel(d){
     const[yy,mm,dd]=d.split('-').map(Number);
-    return `${dd} ${MN[mm-1].slice(0,3)} ${yy+543}`;
-  }
-  function chip(label,x,y,w,color=accent){
-    roundRect(x,y,w,42,13,color,null);
-    txt(label,x+w/2,y+29,20,800,bg,'center');
+    return `${dd}/${mm}/${yy+543}`;
   }
 
   ctx.fillStyle=bg;
   ctx.fillRect(0,0,width,height);
-  roundRect(54,54,width-108,height-108,34,'rgba(255,255,255,.26)',border);
-  roundRect(86,86,width-172,118,26,accent,null);
-  txt('DF TRACKER',128,135,28,800,bg);
-  txt('Clinic income slip',128,174,21,600,'rgba(255,255,255,.78)');
-  txt(`${MN[S.m]} ${S.y+543}`,width-128,154,30,800,bg,'right');
+  roundRect(54,34,width-108,height-68,34,'rgba(255,255,255,.28)',border);
 
-  txt(clinic.name,92,268,45,800,text);
-  chip(`DF ${clinic.dfPct||0}%`,92,300,116);
-  chip(`${uniqueDays} วัน`,222,300,100,sub);
-  chip(`${totals.cases} เคส`,336,300,112,sub);
-
-  const cards=[
-    ['DF ที่ได้',totals.dfIncome,92,382],
-    ['แลปที่หัก',totals.labShare,554,382],
-    ['หัก ปกส.',totals.ss,92,526],
-    ['สุทธิรวม',totals.net,554,526]
-  ];
-  cards.forEach(([label,val,x,y],i)=>{
-    roundRect(x,y,404,112,22,surface,border);
-    txt(label,x+28,y+38,22,700,sub);
-    txt(money(val),x+28,y+84,38,800,i===3?accent:text);
-  });
-
-  let y=704;
+  let y=100;
   txt('รายการตามวันที่',92,y,28,800,text);
   y+=34;
   roundRect(92,y,896,52,16,surface,border);
@@ -2263,7 +2272,6 @@ function downloadClinicSlip(clinicId){
   roundRect(92,y,896,132,24,accent,null);
   txt('รวมสุทธิ',128,y+52,27,800,bg);
   txt(money(totals.net),952,y+58,46,800,bg,'right');
-  txt(`Gross ${money(totals.gross)} · DF ${money(totals.dfIncome)} · Lab -${money(totals.labShare)} · WHT -${money(totals.wht)}`,128,y+96,20,600,'rgba(255,255,255,.78)');
 
   const link=document.createElement('a');
   const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
@@ -2277,15 +2285,15 @@ function renderClinics(el){
   el.innerHTML=`
     <div class="sec-title"><span class="badge">CONSTANTS</span> ค่าคงที่ทั้งแอป</div>
     <div class="const-banner">
-      <span class="cbadge">🛡 ปกส. = ฿${SS_PER_CASE} × จำนวนเคส ปกส.</span>
-      <span class="cbadge">⚗️ หารค่าแลป ${LAB_SPLIT_PCT}/${100-LAB_SPLIT_PCT}</span>
+      <span class="cbadge"><span class="solid-ico"><i class="fa-solid fa-shield-halved"></i></span>ปกส. = ฿${SS_PER_CASE} × จำนวนเคส ปกส.</span>
+      <span class="cbadge"><span class="solid-ico"><i class="fa-solid fa-flask"></i></span>หารค่าแลป ${LAB_SPLIT_PCT}/${100-LAB_SPLIT_PCT}</span>
     </div>
     <div class="sec-title"><span class="badge">CLINICS</span> รายการคลินิก</div>
     <div class="clist" id="cList"></div>
     <div class="add-row"><button class="btn btn-primary" id="addC"><i class="fa-solid fa-plus icon-inline"></i>เพิ่มคลินิก</button></div>`;
   const list=el.querySelector('#cList');
   if(!clinics.length){
-    list.innerHTML=`<div class="empty-state"><div class="big">🦷</div>ยังไม่มีคลินิก</div>`;
+    list.innerHTML=`<div class="empty-state"><div class="big"><span class="solid-ico"><i class="fa-solid fa-tooth"></i></span></div>ยังไม่มีคลินิก</div>`;
   } else {
     list.innerHTML=clinics.map(c=>`
       <div class="ccard">
@@ -2294,8 +2302,8 @@ function renderClinics(el){
           <div class="pills">
             <span class="pill">DF ${c.dfPct||0}%</span>
             <span class="pill ${c.ssDeduct?'':'off'}">${c.ssDeduct?'หักปกส.':'ไม่หักปกส.'}</span>
-            <span class="pill ${c.xrayFee?'':'off'}">${c.xrayFee?'📷 ได้ค่าฟิล์ม':'ไม่ได้ค่าฟิล์ม'}</span>
-            <span class="pill ${c.whtDeduct?'':'off'}">${c.whtDeduct?`🧾 หัก ${WHT_PCT}%`:'ไม่หัก ณ ที่จ่าย'}</span>
+            <span class="pill ${c.xrayFee?'':'off'}">${c.xrayFee?'<span class="solid-ico"><i class="fa-solid fa-camera"></i></span>ได้ค่าฟิล์ม':'ไม่ได้ค่าฟิล์ม'}</span>
+            <span class="pill ${c.whtDeduct?'':'off'}">${c.whtDeduct?`<span class="solid-ico"><i class="fa-solid fa-receipt"></i></span>หัก ${WHT_PCT}%`:'ไม่หัก ณ ที่จ่าย'}</span>
           </div>
         </div>
         <div class="ccard-actions">
@@ -2341,7 +2349,7 @@ function renderSummary(el){
       <div class="stat"><div class="sl">วันที่ลงทำ</div><div class="sv">${days} วัน</div></div>
     </div>
     <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก</div>
-    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">📅</div>ยังไม่มีข้อมูลเดือนนี้</div>`:`
+    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big"><span class="solid-ico"><i class="fa-solid fa-calendar-days"></i></span></div>ยังไม่มีข้อมูลเดือนนี้</div>`:`
     <table class="summary-table">
       <thead><tr><th>คลินิก</th><th class="r">Day</th><th class="r">Total</th><th class="r">DF Inc.</th><th class="r">Lab</th><th class="r">Net</th><th class="action-cell"></th></tr></thead>
       <tbody>
@@ -2387,7 +2395,7 @@ function renderYearly(el){
       <button class="btn btn-ghost btn-sm" id="nY">ปีหน้า ›</button>
     </div>
     <div class="tax-note">
-      📋 เงินได้ประเภทนี้จัดเป็น <strong>มาตรา 40(2)</strong> — ใช้ยอด "เงินได้ 40(2) รวม" ด้านล่างเป็นฐานยื่นภาษีเงินได้บุคคลธรรมดา ส่วนยอดหัก ณ ที่จ่ายใช้เป็นเครดิตภาษีตอนยื่นแบบได้
+      <span class="solid-ico"><i class="fa-solid fa-clipboard-list"></i></span>เงินได้ประเภทนี้จัดเป็น <strong>มาตรา 40(2)</strong> — ใช้ยอด "เงินได้ 40(2) รวม" ด้านล่างเป็นฐานยื่นภาษีเงินได้บุคคลธรรมดา ส่วนยอดหัก ณ ที่จ่ายใช้เป็นเครดิตภาษีตอนยื่นแบบได้
     </div>
     <div class="stat-grid">
       <div class="stat"><div class="sl">วันที่ลงทำทั้งปี</div><div class="sv">${days} วัน</div></div>
@@ -2397,7 +2405,7 @@ function renderYearly(el){
       <div class="stat hilite"><div class="sl">คงเหลือหลังหัก ณ ที่จ่าย</div><div class="sv">฿${fmt(tNetAfterWht)}</div></div>
     </div>
     <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก (สำหรับยื่นภาษี)</div>
-    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">🧾</div>ยังไม่มีข้อมูลปีนี้</div>`:`
+    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big"><span class="solid-ico"><i class="fa-solid fa-receipt"></i></span></div>ยังไม่มีข้อมูลปีนี้</div>`:`
     <table>
       <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">เงินได้ 40(2)</th><th class="r">หัก ${WHT_PCT}%</th><th class="r">คงเหลือ</th></tr></thead>
       <tbody>
@@ -2439,7 +2447,7 @@ function buildDayModal(date){
       <div class="modal-h">
         <h2>${dd} ${MN[mm-1]} ${yy+543}</h2>
       </div>
-      ${!list.length?`<div class="empty-state-cream"><div class="big">🗓️</div>ยังไม่มีรายการวันนี้</div>`:
+      ${!list.length?`<div class="empty-state-cream"><div class="big"><span class="solid-ico"><i class="fa-solid fa-calendar-day"></i></span></div>ยังไม่มีรายการวันนี้</div>`:
         list.map(e=>{
           const c=byId(e.clinicId);
           const{gross,dfPct,dfIncome,totalCases,ssCases,ss,labShare,wht,net}=calc(e);
@@ -2533,8 +2541,8 @@ function buildEntryEditor(ctx){
         <div class="field">
           <label>ช่วงที่ทำ</label>
           <div class="seg">
-            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}">🌌 ช่วงเย็น</button>
-            <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}">☀️ ทั้งวัน</button>
+            <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}"><span class="solid-ico"><i class="fa-solid fa-moon"></i></span>ช่วงเย็น</button>
+            <button type="button" data-sh="fullday"  class="${draft.shift==='fullday' ?'active':''}"><span class="solid-ico"><i class="fa-solid fa-sun"></i></span>ทั้งวัน</button>
           </div>
         </div>
 
@@ -2586,7 +2594,7 @@ function buildEntryEditor(ctx){
           ${draft.whtDeduct&&wht>0?`<div class="ss-calc wht-calc"><span>DF ฿${fmt(dfIncome)} × ${WHT_PCT}%</span><span class="sv">−฿${fmt(wht)}</span></div>`:''}
         </div>
 
-        ${cl?.xrayFee?`<div style="margin-bottom:12px;"><span class="pill">📷 คลินิกนี้ได้ค่าฟิล์ม</span></div>`:''}
+        ${cl?.xrayFee?`<div style="margin-bottom:12px;"><span class="pill"><span class="solid-ico"><i class="fa-solid fa-camera"></i></span>คลินิกนี้ได้ค่าฟิล์ม</span></div>`:''}
 
         <div class="field">
           <label>หมายเหตุ</label>
