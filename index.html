@@ -659,28 +659,26 @@ td.net-col{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:1.45em;
-  min-width:1.45em;
-  height:1.45em;
-  border-radius:.45em;
-  background:currentColor;
-  color:var(--bg);
+  width:1em;
+  min-width:1em;
+  height:1em;
+  background:transparent;
+  color:currentColor;
   margin-right:.35em;
-  vertical-align:-.22em;
+  vertical-align:-.12em;
 }
 
 .solid-ico i{
-  color:var(--bg);
-  font-size:.74em;
+  color:currentColor;
+  font-size:1em;
   line-height:1;
   margin:0;
 }
 
 .big .solid-ico{
-  width:44px;
-  height:44px;
-  min-width:44px;
-  border-radius:14px;
+  width:auto;
+  height:auto;
+  min-width:0;
   margin:0 auto 8px;
   color:var(--subtext);
   font-size:28px;
@@ -775,12 +773,12 @@ td.net-col{
 }
 
 .action-icon{
-  width:34px;
-  height:34px;
+  width:28px;
+  height:28px;
   border:none;
-  border-radius:10px;
-  background:var(--accent);
-  color:var(--bg);
+  border-radius:6px;
+  background:transparent;
+  color:var(--accent);
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -790,7 +788,7 @@ td.net-col{
 }
 
 .action-icon i{
-  font-size:14px;
+  font-size:16px;
   line-height:1;
   color:inherit;
   margin:0;
@@ -798,7 +796,8 @@ td.net-col{
 
 .action-icon:hover{
   transform:translateY(-1px);
-  background:var(--accent-hover);
+  background:transparent;
+  color:var(--accent-hover);
 }
 
 .summary-table th.action-cell,
