@@ -507,20 +507,25 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
   display:flex;
   align-items:center;
   gap:8px;
-  font-size:13px;
-  font-weight:800;
+  font-size:clamp(22px,3vw,34px);
+  font-weight:500;
   color:var(--text);
-  margin:20px 0 15px;
+  margin:28px 0 18px;
+  padding-bottom:12px;
+  border-bottom:4px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.2px;
 }
 
 .sec-title .badge{
-  background: var(--subtext);
-  color: var(--bg);
-  font-family:
-  'IBM Plex Mono',monospace;
-  font-size:10px;
-  padding:3px 8px;
-  border-radius:6px;
+  background:var(--accent);
+  color:var(--bg);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;
+  font-weight:800;
+  padding:7px 11px;
+  border-radius:8px;
+  letter-spacing:0;
 }
 
 /* ---------- Tax ---------- */
@@ -545,35 +550,48 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 
 table{
   width:100%;
-  border-collapse:collapse;
+  border-collapse:separate;
+  border-spacing:0 8px;
   background:transparent;
-  border-radius: 6px;
-  overflow:hidden;
   border:none;
 }
 
 th,td{
-  padding:9px 12px;
+  padding:13px 14px;
   text-align:left;
-  font-size:12px;
-  border-bottom:1px solid var(--border);
+  font-size:13px;
+  border-bottom:none;
 }
 
 th{
-  background: var(--surface2);
-  color: var(--bg);
+  background:transparent;
+  color:var(--subtext);
   font-weight:700;
-  font-size:11px;
-  letter-spacing:.3px;
+  font-size:12px;
+  letter-spacing:.2px;
+  padding-top:4px;
+  padding-bottom:4px;
 }
 
-tr:last-child td{
-  border-bottom:none;
+tbody tr{
+  background:var(--surface);
 }
 
 td{
   color:var(--text);
-  font-weight:500;
+  font-weight:600;
+}
+
+tbody tr:nth-child(odd){
+  background:var(--surface2);
+}
+
+tbody td:first-child{
+  border-radius:8px 0 0 8px;
+}
+
+tbody td:last-child{
+  border-radius:0 8px 8px 0;
 }
 
 td.r,th.r{
@@ -1423,6 +1441,23 @@ const PAL=['#2B2BE0','#C9A227','#CC2222','#1A7A60','#7A6FB0','#A2673D','#2E8FAE'
 const THEME_KEY='dftracker-theme';
 
 const THEMES={
+  monkeytype:{
+    label:'Monkeytype',
+    bg:'#E6E8EE',
+    surface:'#D5D8E4',
+    surface2:'#C9CDDA',
+    text:'#34374A',
+    subtext:'#A4AABD',
+    accent:'#3159A7',
+    accentHover:'#294E94',
+    secondary:'#A4AABD',
+    border:'#C7CBD8',
+    danger:'#9A4353',
+    success:'#4F6F66',
+    warning:'#8E7658',
+    highlight:'#3159A7'
+  },
+
   terrazzo:{
   label:'Terrazzo',
 
@@ -1456,16 +1491,16 @@ lemon:{
 },
   iceberg:{
     label:'Iceberg',
-    bg:'#E8EAF0',
-    surface:'#D5DAE6',
-    surface2:'#C3CADB',
-    text:'#1F365C',
-    subtext:'#6E7F9E',
-    accent:'#2F5DAA',
-    accentHover:'#264C8C',
-    secondary:'#A7B1CA',
-    border:'#CBD1DD',
-    danger:'#B75A68'
+    bg:'#E6E8EE',
+    surface:'#D5D8E4',
+    surface2:'#C9CDDA',
+    text:'#34374A',
+    subtext:'#A4AABD',
+    accent:'#3159A7',
+    accentHover:'#294E94',
+    secondary:'#A4AABD',
+    border:'#C7CBD8',
+    danger:'#9A4353'
   },
 
   macroblank:{
@@ -1775,11 +1810,11 @@ function mixHex(hex,target,amt){
 
 function loadThemeKey(){
   const saved=localStorage.getItem(THEME_KEY);
-  return (saved && THEMES[saved]) ? saved : 'terrazzo';
+  return (saved && THEMES[saved]) ? saved : 'iceberg';
 }
 
 function applyTheme(key){
-  const th=THEMES[key]||THEMES.terrazzo;
+  const th=THEMES[key]||THEMES.iceberg;
   const root=document.documentElement.style;
 
   root.setProperty('--bg',th.bg);
@@ -2750,4 +2785,3 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
-
