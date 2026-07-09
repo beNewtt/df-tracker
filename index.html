@@ -575,6 +575,7 @@ th{
 
 tbody tr{
   background:var(--surface);
+  transition:background .12s,color .12s;
 }
 
 td{
@@ -592,6 +593,16 @@ tbody td:first-child{
 
 tbody td:last-child{
   border-radius:0 8px 8px 0;
+}
+
+tbody tr:hover{
+  background:var(--accent);
+}
+
+tbody tr:hover td,
+tbody tr:hover td.net-col,
+tbody tr:hover .action-icon{
+  color:var(--bg);
 }
 
 td.r,th.r{
@@ -2235,7 +2246,7 @@ function downloadClinicSlip(clinicId){
   },{gross:0,dfIncome:0,ss:0,labShare:0,wht:0,net:0,netAfterWht:0,cases:0});
   const width=760;
   const rowH=56;
-  const height=Math.max(560, 320 + Math.max(rows.length,1)*rowH);
+  const height=Math.max(640, 420 + Math.max(rows.length,1)*rowH);
   const canvas=document.createElement('canvas');
   canvas.width=width;
   canvas.height=height;
@@ -2289,8 +2300,8 @@ function downloadClinicSlip(clinicId){
   txt('DF',350,y+31,17,800,sub,'right');
   txt('แลป',470,y+31,17,800,sub,'right');
   txt('หักอื่น',585,y+31,17,800,sub,'right');
-  txt('สุทธิ',686,y+31,17,800,sub,'right');
-  y+=62;
+  txt('Net',686,y+31,17,800,sub,'right');
+  y+=76;
 
   if(!rows.length){
     roundRect(54,y,652,104,16,bg,border);
