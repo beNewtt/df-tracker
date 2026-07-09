@@ -739,6 +739,41 @@ td.net-col{
   background:var(--red-lt);
 }
 
+.action-icon{
+  width:34px;
+  height:34px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  color:var(--bg);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.15s;
+  box-shadow:none;
+}
+
+.action-icon i{
+  font-size:14px;
+  line-height:1;
+  color:inherit;
+  margin:0;
+}
+
+.action-icon:hover{
+  transform:translateY(-1px);
+  background:var(--accent-hover);
+}
+
+.summary-table th.action-cell,
+.summary-table td.action-cell{
+  width:46px;
+  text-align:center;
+  padding-left:6px;
+  padding-right:6px;
+}
+
 .add-row{
   display:flex;
   justify-content:flex-end;
@@ -2264,12 +2299,10 @@ function renderClinics(el){
           </div>
         </div>
         <div class="ccard-actions">
-          <button class="btn btn-primary btn-sm" data-x="${c.id}">Export JPG</button>
           <button class="btn btn-ghost btn-sm" data-e="${c.id}">แก้ไข</button>
           <button class="btn btn-danger btn-sm" data-d="${c.id}">ลบ</button>
         </div>
       </div>`).join('');
-    list.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>downloadClinicSlip(b.dataset.x));
     list.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{S.clinicEditor={...byId(b.dataset.e)};renderModals();});
     list.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
       if(confirm('ลบคลินิกนี้?')){saveC(clinics.filter(c=>c.id!==b.dataset.d));renderClinics(el);}
@@ -2309,8 +2342,8 @@ function renderSummary(el){
     </div>
     <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก</div>
     ${!Object.keys(byC).length?`<div class="empty-state"><div class="big">📅</div>ยังไม่มีข้อมูลเดือนนี้</div>`:`
-    <table>
-      <thead><tr><th>คลินิก</th><th class="r">Day</th><th class="r">Total</th><th class="r">DF Inc.</th><th class="r">Lab</th><th class="r">Net</th></tr></thead>
+    <table class="summary-table">
+      <thead><tr><th>คลินิก</th><th class="r">Day</th><th class="r">Total</th><th class="r">DF Inc.</th><th class="r">Lab</th><th class="r">Net</th><th class="action-cell"></th></tr></thead>
       <tbody>
         ${Object.entries(byC).map(([id,b])=>{
           const c=byId(id);
@@ -2321,12 +2354,14 @@ function renderSummary(el){
             <td class="r">฿${fmt(b.dfIncome)}</td>
             <td class="r">฿${fmt(b.lab)}</td>
             <td class="r net-col">฿${fmt(b.net)}</td>
+            <td class="action-cell">${c?`<button class="action-icon" data-slip="${id}" title="ดาวน์โหลดสลิป JPG" aria-label="ดาวน์โหลดสลิป ${c.name}"><i class="fa-solid fa-image"></i></button>`:''}</td>
           </tr>`;
         }).join('')}
       </tbody>
     </table>`}`;
   el.querySelector('#pM').onclick=()=>shiftM(-1);
   el.querySelector('#nM').onclick=()=>shiftM(1);
+  el.querySelectorAll('[data-slip]').forEach(b=>b.onclick=()=>downloadClinicSlip(b.dataset.slip));
 }
 
 /* ═══════════ Yearly / Tax ═══════════ */
@@ -2701,4 +2736,3 @@ function buildClinicEditor(c){
 </script>
 </body>
 </html>
-
