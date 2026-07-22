@@ -514,7 +514,7 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 }
 
 .sec-title .badge{
-  background: var(--surface2);
+  background: var(--subtext);
   color: var(--bg);
   font-family:
   'IBM Plex Mono',monospace;
@@ -560,7 +560,7 @@ th,td{
 }
 
 th{
-  background: var(--subtext);
+  background: var(--surface2);
   color: var(--bg);
   font-weight:700;
   font-size:11px;
@@ -727,12 +727,12 @@ td.net-col{
 }
 
 .btn-ghost{
-  background:var(--surface);
+  background:transparent;
   color:var(--text);
 }
 
 .btn-ghost:hover{
-  background: var(--text);
+  background:var(--surface2);
   color:var(--bg);
 }
 
@@ -742,14 +742,12 @@ td.net-col{
 }
 
 .btn-danger:hover{
-  background:var(--text);
-  color:var(--bg);
+  background:var(--red-lt);
 }
 
 .btn-sm{
   padding:5px 10px;
   font-size:12px;
-  color: var(--bg);
 }
 
 .btn-icon{
@@ -2200,9 +2198,9 @@ function downloadClinicSlip(clinicId){
     a.cases+=r.totalCases;
     return a;
   },{gross:0,dfIncome:0,ss:0,labShare:0,wht:0,net:0,netAfterWht:0,cases:0});
-  const width=760;
-  const rowH=56;
-  const height=Math.max(640, 420 + Math.max(rows.length,1)*rowH);
+  const receiptLines=rows.reduce((n,r)=>n+1+((r.labShare+r.ss+r.wht)>0?1:0),0);
+  const width=600;
+  const height=Math.max(760,430 + Math.max(receiptLines,1)*42);
   const canvas=document.createElement('canvas');
   canvas.width=width;
   canvas.height=height;
@@ -2230,12 +2228,23 @@ function downloadClinicSlip(clinicId){
     if(fill){ctx.fillStyle=fill;ctx.fill();}
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
   }
-  function txt(s,x,y,size=28,weight=600,color=text,align='left'){
-    ctx.font=`${weight} ${size}px ${font}`;
+  function txt(s,x,y,size=28,weight=600,color=text,align='left',style='normal'){
+    ctx.font=`${style} ${weight} ${size}px ${font}`;
     ctx.fillStyle=color;
     ctx.textAlign=align;
     ctx.textBaseline='alphabetic';
     ctx.fillText(String(s),x,y);
+  }
+  function rule(y){
+    ctx.save();
+    ctx.strokeStyle=sub;
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(64,y);
+    ctx.lineTo(width-64,y);
+    ctx.stroke();
+    ctx.restore();
   }
   function money(n){return '฿'+fmt(n);}
   function dateLabel(d){
@@ -2245,41 +2254,39 @@ function downloadClinicSlip(clinicId){
 
   ctx.fillStyle=bg;
   ctx.fillRect(0,0,width,height);
-  roundRect(36,30,width-72,height-60,28,bg,border);
 
-  let y=88;
-  txt(clinic.name,70,y,31,800,text);
-  txt(`${MN[S.m]} ${S.y+543}`,690,y,18,700,sub,'right');
-  y+=34;
-  roundRect(54,y,652,48,13,surface,border);
-  txt('วันที่',74,y+31,17,800,sub);
-  txt('DF',350,y+31,17,800,sub,'right');
-  txt('แลป',470,y+31,17,800,sub,'right');
-  txt('หักอื่น',585,y+31,17,800,sub,'right');
-  txt('Net',686,y+31,17,800,sub,'right');
-  y+=76;
+  let y=92;
+  txt(clinic.name.toUpperCase(),width/2,y,29,800,text,'center','italic');
+  txt(MN[S.m],width/2,y+32,20,500,text,'center');
+  y=178;
+  txt('วันที่:',64,y,17,500,text);
+  txt('DF',width-64,y,17,500,text,'right');
+  rule(y+18);
+  y+=58;
 
   if(!rows.length){
-    roundRect(54,y,652,104,16,bg,border);
-    txt('ยังไม่มีข้อมูลของคลินิกนี้ในเดือนที่เลือก',380,y+64,20,700,sub,'center');
-    y+=128;
+    txt('ยังไม่มีข้อมูลในเดือนที่เลือก',width/2,y+20,18,500,sub,'center');
+    y+=70;
   } else {
-    rows.forEach((r,i)=>{
-      const other=r.ss+r.wht;
-      if(i%2===0) roundRect(54,y-33,652,48,10,'#FAFAFA',null);
-      txt(dateLabel(r.date),74,y,19,700,text);
-      txt(money(r.dfIncome),350,y,19,700,text,'right');
-      txt(r.labShare?'-'+money(r.labShare):money(0),470,y,19,700,r.labShare?danger:sub,'right');
-      txt(other?'-'+money(other):money(0),585,y,19,700,other?danger:sub,'right');
-      txt(money(r.net),686,y,20,800,accent,'right');
-      y+=rowH;
+    rows.forEach(r=>{
+      const deductions=r.labShare+r.ss+r.wht;
+      txt(dateLabel(r.date),64,y,18,500,text);
+      txt(money(r.dfIncome),width-64,y,18,500,text,'right');
+      y+=34;
+      if(deductions){
+        txt('- หักรวม',84,y,15,500,sub);
+        txt('-'+money(deductions),width-64,y,15,500,sub,'right');
+        y+=28;
+      }
     });
   }
 
-  y+=24;
-  roundRect(54,y,652,108,18,accent,null);
-  txt('รวมสุทธิ',86,y+47,25,800,bg);
-  txt(money(totals.net),674,y+55,38,800,bg,'right');
+  y+=6;
+  rule(y);
+  y+=42;
+  txt('รวมสุทธิ:',64,y,20,800,text);
+  txt(money(totals.netAfterWht),width-64,y,22,800,text,'right');
+  txt(`${MN[S.m]} ${S.y+543}`,width/2,height-70,17,500,sub,'center');
 
   const link=document.createElement('a');
   const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
