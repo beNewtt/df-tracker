@@ -154,6 +154,16 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 .settings-divider{
   height:1px;background:var(--cream-dk2);margin:12px 0;
 }
+.settings-data-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.settings-data-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:8px 6px;background:var(--surface);color:var(--text);
+}
+.settings-data-btn:hover{
+  background:var(--surface2);color:var(--bg);
+}
 
 .cal-wrap{
   background:var(--bg);
@@ -1395,7 +1405,7 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, onSnapshot
+  getFirestore, doc, setDoc, onSnapshot, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -2030,6 +2040,56 @@ function syncTabs(){
 }
 
 /* ═══════════ Settings panel (theme picker + logout) ═══════════ */
+function downloadDataBackup(){
+  const payload={
+    app:'DF Tracker',
+    version:1,
+    exportedAt:new Date().toISOString(),
+    clinics,
+    entries
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=`df-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+  link.style.display='none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function importDataBackup(file){
+  if(!file) return;
+  try{
+    const parsed=JSON.parse(await file.text());
+    const payload=parsed?.data && !parsed.clinics ? parsed.data : parsed;
+    const nextClinics=payload?.clinics;
+    const nextEntries=payload?.entries;
+    const validClinics=Array.isArray(nextClinics) && nextClinics.every(c=>c && typeof c==='object' && typeof c.id==='string' && typeof c.name==='string');
+    const validEntries=nextEntries && typeof nextEntries==='object' && !Array.isArray(nextEntries) && Object.entries(nextEntries).every(([date,list])=>/^\d{4}-\d{2}-\d{2}$/.test(date) && Array.isArray(list));
+    if(!validClinics || !validEntries) throw new Error('รูปแบบไฟล์ไม่ใช่ข้อมูลของ DF Tracker');
+    const entryCount=Object.values(nextEntries).reduce((sum,list)=>sum+list.length,0);
+    if(!confirm(`นำเข้า ${nextClinics.length} คลินิก และ ${entryCount} รายการ?\nข้อมูลปัจจุบันจะถูกแทนที่`)) return;
+    if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนนำเข้าข้อมูล');
+    setSyncing(true);
+    const batch=writeBatch(db);
+    batch.set(clinicsDocRef(currentUser.uid),{list:nextClinics});
+    batch.set(entriesDocRef(currentUser.uid),{data:nextEntries});
+    await batch.commit();
+    clinics=nextClinics;
+    entries=nextEntries;
+    S.settingsOpen=false;
+    renderApp();
+    alert('นำเข้าข้อมูลเรียบร้อยแล้ว');
+  }catch(err){
+    alert('นำเข้าข้อมูลไม่สำเร็จ: '+err.message);
+  }finally{
+    setSyncing(false);
+  }
+}
+
 function buildSettingsPanel(){
   return `
     <div class="settings-panel" id="settingsPanel">
@@ -2050,6 +2110,13 @@ function buildSettingsPanel(){
         }).join('')}
       </div>
       <div class="settings-divider"></div>
+      <div class="settings-panel-title">ข้อมูล</div>
+      <div class="settings-data-actions">
+        <button type="button" class="btn btn-sm settings-data-btn" id="backupExportBtn"><i class="fa-solid fa-download"></i>สำรอง</button>
+        <button type="button" class="btn btn-sm settings-data-btn" id="backupImportBtn"><i class="fa-solid fa-upload"></i>นำเข้า</button>
+      </div>
+      <input type="file" id="backupFileInput" accept=".json,application/json" hidden>
+      <div class="settings-divider"></div>
       <button type="button" class="btn btn-danger btn-sm" id="logoutBtn" style="width:100%;">ออกจากระบบ</button>
     </div>`;
 }
@@ -2064,6 +2131,18 @@ function wireSettingsPanel(){
     };
   });
   panel.onclick=ev=>ev.stopPropagation();
+  const exportBtn=document.getElementById('backupExportBtn');
+  const importBtn=document.getElementById('backupImportBtn');
+  const fileInput=document.getElementById('backupFileInput');
+  if(exportBtn) exportBtn.onclick=downloadDataBackup;
+  if(importBtn && fileInput){
+    importBtn.onclick=()=>fileInput.click();
+    fileInput.onchange=()=>{
+      const file=fileInput.files?.[0];
+      fileInput.value='';
+      importDataBackup(file);
+    };
+  }
   const logoutBtn=document.getElementById('logoutBtn');
   if(logoutBtn) logoutBtn.onclick=()=>signOut(auth);
 }
