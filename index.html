@@ -1381,6 +1381,38 @@ input:checked+.slider:before{
   opacity:.45;
 }
 
+/* ---------- Search history ---------- */
+.gear-btn.active{color:var(--accent);}
+.history-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:28px 0 18px;}
+.history-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:6px;}
+.history-head h2{font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:500;color:var(--text);}
+.history-close{border:0;background:transparent;color:var(--subtext);font-size:17px;cursor:pointer;}
+.history-search{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--surface2);padding:10px 2px 12px;transition:.15s;}
+.history-search:focus-within{border-color:var(--accent);}
+.history-search>i{color:var(--accent);font-size:18px;}
+.history-search input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:20px;}
+.history-search input::placeholder{color:var(--surface2);}
+.history-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:15px 0 28px;}
+.history-filter{border:0;border-radius:7px;background:var(--surface);color:var(--text);padding:8px 10px;font-size:11px;font-weight:700;outline:0;}
+.history-count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--subtext);}
+.history-group{margin-top:25px;}
+.history-month{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--subtext);margin-bottom:9px;}
+.history-month span{background:var(--subtext);color:var(--bg);padding:3px 7px;border-radius:5px;font-size:9px;}
+.history-results{display:flex;flex-direction:column;gap:3px;}
+.history-result{display:grid;grid-template-columns:105px minmax(0,1fr) 105px;align-items:center;gap:16px;padding:13px 14px;border:0;border-bottom:1px solid var(--border);width:100%;background:transparent;color:var(--text);text-align:left;cursor:pointer;}
+.history-result:nth-child(odd){background:var(--surface);}
+.history-result:hover{background:var(--surface2);}
+.history-date{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;}
+.history-shift{display:block;font-family:'Sarabun',sans-serif;font-size:10px;color:var(--subtext);margin-top:4px;}
+.history-clinic{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px;}
+.history-details{font-size:11px;color:var(--subtext);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.history-money{text-align:right;}
+.history-money strong{display:block;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);}
+.history-money span{font-size:10px;color:var(--subtext);}
+.history-empty{display:none;text-align:center;color:var(--subtext);padding:55px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.history-empty i{display:block;font-size:26px;margin-bottom:12px;}
+.history-hint{margin-top:32px;border-top:1px solid var(--border);padding-top:12px;font-size:10px;color:var(--subtext);}
+
 /* ---------- Yearly overview ---------- */
 .annual-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px;}
 .annual-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:6px;}
@@ -1446,6 +1478,13 @@ input:checked+.slider:before{
   .annual-month-label{font-size:8px;}
   .annual-insights{grid-template-columns:1fr;gap:12px;}
   .annual-metric{display:none;}
+  .history-head h2{font-size:21px;}
+  .history-search input{font-size:16px;}
+  .history-count{width:100%;margin:3px 0 0;}
+  .history-result{grid-template-columns:82px minmax(0,1fr);gap:10px;padding:12px 10px;}
+  .history-money{grid-column:2;text-align:left;display:flex;align-items:center;gap:8px;}
+  .history-money strong{font-size:12px;}
+  .history-details{white-space:normal;}
 }
 </style>
 </head>
@@ -2009,7 +2048,7 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false,searchOpen:false,searchQuery:'',searchClinic:'all',searchYear:'all',searchShift:'all'};
 applyTheme(S.themeKey);
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -2017,6 +2056,7 @@ const fmt=n=>(Number(n)||0).toLocaleString('en-US');
 const ds=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 const byId=id=>clinics.find(c=>c.id===id);
 const pad2=n=>String(n).padStart(2,'0');
+const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
 /* ═══════════ Math ═══════════ */
 function calc(e){
@@ -2073,6 +2113,9 @@ function renderApp(){
           <span class="sync-dot" id="syncDot" title="สถานะ sync"></span>
           ${u.photoURL?`<img src="${u.photoURL}" alt=""/>`:''}
           <span class="uname">${u.displayName||u.email||''}</span>
+          <button class="gear-btn ${S.searchOpen?'active':''}" id="searchBtn" title="ค้นหารายการ" aria-label="ค้นหารายการ">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
           <div class="settings-wrap">
             <button class="gear-btn" id="gearBtn" title="ตั้งค่า">
               <i class="fa-solid fa-gear"></i>
@@ -2083,9 +2126,11 @@ function renderApp(){
       </div>
       <div id="content"></div>
     </div>`;
-  app.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;renderContent();syncTabs();});
+  app.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{S.searchOpen=false;S.tab=b.dataset.tab;renderContent();syncTabs();});
+  const searchBtn=document.getElementById('searchBtn');
+  searchBtn.onclick=(ev)=>{ev.stopPropagation();S.searchOpen=!S.searchOpen;S.settingsOpen=false;renderApp();};
   const gearBtn=document.getElementById('gearBtn');
-  gearBtn.onclick=(ev)=>{ev.stopPropagation();S.settingsOpen=!S.settingsOpen;renderApp();};
+  gearBtn.onclick=(ev)=>{ev.stopPropagation();S.searchOpen=false;S.settingsOpen=!S.settingsOpen;renderApp();};
   wireSettingsPanel();
   renderContent(); renderModals();
 }
@@ -2208,11 +2253,85 @@ document.addEventListener('click',()=>{
 function renderContent(){
   const el=document.getElementById('content');
   if(!el) return;
+  if(S.searchOpen){el.className='';return renderSearch(el);}
   el.className = S.tab==='clinics' ? 'clinics-view' : '';
   if(S.tab==='calendar') return renderCalendar(el);
   if(S.tab==='clinics')  return renderClinics(el);
   if(S.tab==='summary')  return renderSummary(el);
   if(S.tab==='yearly')   return renderYearly(el);
+}
+
+/* ═══════════ Search history ═══════════ */
+function renderSearch(el){
+  const years=[...new Set(Object.keys(entries).map(date=>Number(date.slice(0,4))).filter(Boolean))].sort((a,b)=>b-a);
+  const searchMonths=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  el.innerHTML=`
+    <div class="history-head"><div><div class="history-eyebrow">SEARCH HISTORY</div><h2>Find past entries</h2></div><button class="history-close" id="historyClose" aria-label="ปิดการค้นหา"><i class="fa-solid fa-xmark"></i></button></div>
+    <label class="history-search"><i class="fa-solid fa-magnifying-glass"></i><input id="historyQuery" type="search" value="${esc(S.searchQuery)}" placeholder="Search clinic, case or note..." autocomplete="off"></label>
+    <div class="history-filters">
+      <select class="history-filter" id="historyClinic" aria-label="Clinic"><option value="all">All clinics</option>${clinics.map(c=>`<option value="${esc(c.id)}"${S.searchClinic===c.id?' selected':''}>${esc(c.name)}</option>`).join('')}</select>
+      <select class="history-filter" id="historyYear" aria-label="Year"><option value="all">All years</option>${years.map(year=>`<option value="${year}"${String(S.searchYear)===String(year)?' selected':''}>${year+543}</option>`).join('')}</select>
+      <select class="history-filter" id="historyShift" aria-label="Shift"><option value="all">All shifts</option><option value="evening"${S.searchShift==='evening'?' selected':''}>ช่วงเย็น</option><option value="fullday"${S.searchShift==='fullday'?' selected':''}>ทั้งวัน</option></select>
+      <div class="history-count" id="historyCount"></div>
+    </div>
+    <div id="historyGroups"></div>
+    <div class="history-empty" id="historyEmpty"><i class="fa-solid fa-magnifying-glass"></i>No matching entries</div>
+    <div class="history-hint">Search includes clinic name, case description and notes. Select a result to edit the original entry.</div>`;
+
+  const query=el.querySelector('#historyQuery');
+  const clinicFilter=el.querySelector('#historyClinic');
+  const yearFilter=el.querySelector('#historyYear');
+  const shiftFilter=el.querySelector('#historyShift');
+  const groups=el.querySelector('#historyGroups');
+  const empty=el.querySelector('#historyEmpty');
+  const count=el.querySelector('#historyCount');
+
+  function paint(){
+    const q=S.searchQuery.trim().toLowerCase();
+    const matches=[];
+    Object.entries(entries).forEach(([date,list])=>list.forEach(entry=>{
+      const clinic=byId(entry.clinicId);
+      const caseText=(entry.cases||[]).map(item=>item.desc||'').filter(Boolean).join(' · ');
+      const searchable=`${clinic?.name||''} ${caseText} ${entry.note||''} ${date}`.toLowerCase();
+      if(S.searchClinic!=='all'&&entry.clinicId!==S.searchClinic) return;
+      if(S.searchYear!=='all'&&!date.startsWith(String(S.searchYear))) return;
+      if(S.searchShift!=='all'&&entry.shift!==S.searchShift) return;
+      if(q&&!searchable.includes(q)) return;
+      matches.push({date,entry,clinic,caseText,totals:calc(entry)});
+    }));
+    matches.sort((a,b)=>b.date.localeCompare(a.date));
+    count.textContent=`${matches.length} results · ฿${fmt(matches.reduce((sum,item)=>sum+item.totals.netAfterWht,0))} net`;
+    const grouped={};
+    matches.forEach(item=>{const key=item.date.slice(0,7);(grouped[key]??=[]).push(item);});
+    groups.innerHTML=Object.entries(grouped).map(([key,list])=>{
+      const[yy,mm]=key.split('-').map(Number);
+      return `<section class="history-group"><div class="history-month"><span>${searchMonths[mm-1].slice(0,3).toUpperCase()}</span>${searchMonths[mm-1]} ${yy+543}</div><div class="history-results">${list.map(item=>{
+        const{date,entry,clinic,caseText,totals}=item;
+        const[dy,dm,dd]=date.split('-').map(Number);
+        const deductions=totals.ss+totals.labShare+totals.wht;
+        return `<button class="history-result" data-history-date="${date}" data-history-id="${esc(entry.id||'')}"><div class="history-date">${dd}/${dm}/${dy+543}<span class="history-shift"><i class="fa-solid fa-${entry.shift==='evening'?'moon':'sun'}"></i> ${entry.shift==='evening'?'ช่วงเย็น':'ทั้งวัน'}</span></div><div><div class="history-clinic"><i class="cdot" style="background:${clinic?.color||'#aaa'}"></i>${esc(clinic?.name||'(deleted)')}</div><div class="history-details">${esc(caseText||`${totals.totalCases} cases`)}${entry.note?' · '+esc(entry.note):''}</div></div><div class="history-money"><strong>฿${fmt(totals.netAfterWht)}</strong><span>${deductions?'หัก ฿'+fmt(deductions):'No deductions'}</span></div></button>`;
+      }).join('')}</div></section>`;
+    }).join('');
+    empty.style.display=matches.length?'none':'block';
+  }
+
+  query.oninput=()=>{S.searchQuery=query.value;paint();};
+  clinicFilter.onchange=()=>{S.searchClinic=clinicFilter.value;paint();};
+  yearFilter.onchange=()=>{S.searchYear=yearFilter.value;paint();};
+  shiftFilter.onchange=()=>{S.searchShift=shiftFilter.value;paint();};
+  groups.onclick=event=>{
+    const button=event.target.closest('[data-history-date]');
+    if(!button) return;
+    const date=button.dataset.historyDate;
+    const entry=dayE(date).find(item=>String(item.id||'')===button.dataset.historyId);
+    if(!entry){S.searchOpen=false;S.dayModal=date;renderApp();return;}
+    S.searchOpen=false;
+    S.entryEditor={date,entry:{...entry,cases:(entry.cases||[]).map(item=>({...item}))}};
+    renderApp();
+  };
+  el.querySelector('#historyClose').onclick=()=>{S.searchOpen=false;renderApp();};
+  paint();
+  requestAnimationFrame(()=>query.focus());
 }
 
 /* ═══════════ Calendar ═══════════ */
