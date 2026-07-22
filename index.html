@@ -1393,13 +1393,13 @@ input:checked+.slider:before{
 .history-search input{width:100%;border:0;outline:0;background:transparent;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:20px;}
 .history-search input::placeholder{color:var(--surface2);}
 .history-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:15px 0 28px;}
-.history-filter{border:0;border-radius:7px;background:var(--surface);color:var(--text);padding:8px 10px;font-size:11px;font-weight:700;outline:0;}
+.history-filter{border:0;border-radius:7px;background:var(--surface);color:var(--text);padding:8px 10px;font-family:'Sarabun',sans-serif;font-size:11px;font-weight:700;line-height:1.35;outline:0;}
 .history-count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--subtext);}
 .history-group{margin-top:25px;}
 .history-month{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--subtext);margin-bottom:9px;}
 .history-month span{background:var(--subtext);color:var(--bg);padding:3px 7px;border-radius:5px;font-size:9px;}
 .history-results{display:flex;flex-direction:column;gap:3px;}
-.history-result{display:grid;grid-template-columns:105px minmax(0,1fr) 105px;align-items:center;gap:16px;padding:13px 14px;border:0;border-bottom:1px solid var(--border);width:100%;background:transparent;color:var(--text);text-align:left;cursor:pointer;}
+.history-result{display:grid;grid-template-columns:105px minmax(0,1fr) 105px;align-items:center;gap:16px;padding:13px 14px;border:0;border-bottom:1px solid var(--border);width:100%;background:transparent;color:var(--text);font-family:'Sarabun',sans-serif;font-size:inherit;line-height:1.35;text-align:left;cursor:pointer;}
 .history-result:nth-child(odd){background:var(--surface);}
 .history-result:hover{background:var(--surface2);}
 .history-date{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;}
@@ -1457,6 +1457,11 @@ input:checked+.slider:before{
 .annual-table td.net-col{color:var(--accent);}
 
 @media(max-width:520px){
+  .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px;row-gap:12px;}
+  .brand{grid-column:1;grid-row:1;min-width:0;}
+  .user-chip{grid-column:2;grid-row:1;justify-self:end;gap:6px;}
+  nav.tabs{grid-column:1/-1;grid-row:2;width:100%;}
+  nav.tabs button{flex:1;}
   .cal-header{padding:16px 16px 12px;}
   .cal-header .month-num{font-size:72px;}
   .cal-header .month-name{font-size:22px;}
