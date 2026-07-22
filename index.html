@@ -1380,6 +1380,50 @@ input:checked+.slider:before{
   margin-bottom:8px;
   opacity:.45;
 }
+
+/* ---------- Yearly overview ---------- */
+.annual-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px;}
+.annual-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:6px;}
+.annual-head h2{font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:500;line-height:1.15;color:var(--text);}
+.annual-nav{display:flex;align-items:center;gap:7px;}
+.annual-nav button{width:32px;height:32px;border:0;border-radius:7px;background:var(--surface);color:var(--text);cursor:pointer;}
+.annual-nav button:hover{background:var(--accent);color:var(--bg);}
+.annual-year{min-width:66px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text);}
+.annual-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin:34px 0 46px;}
+.annual-stat{min-width:0;}
+.annual-stat-label{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:8px;}
+.annual-stat-value{font-family:'IBM Plex Mono',monospace;font-size:23px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.annual-stat-note{font-size:10px;color:var(--subtext);margin-top:5px;}
+.annual-stat.primary .annual-stat-value{font-size:27px;color:var(--accent);}
+.annual-section{margin-top:28px;}
+.annual-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px;}
+.annual-section-title{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--text);}
+.annual-badge{background:var(--subtext);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:4px 7px;border-radius:5px;}
+.annual-metric{font-size:10px;color:var(--subtext);}
+.annual-metric strong{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-size:12px;}
+.annual-chart-shell{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 0 9px;}
+.annual-chart{height:225px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:end;gap:7px;position:relative;padding-top:18px;}
+.annual-chart::before,.annual-chart::after{content:"";position:absolute;left:0;right:0;border-top:1px dashed var(--border);}
+.annual-chart::before{top:33%;}.annual-chart::after{top:66%;}
+.annual-month{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;position:relative;z-index:1;}
+.annual-bar-wrap{width:100%;height:178px;display:flex;align-items:flex-end;justify-content:center;}
+.annual-bar{width:min(23px,70%);height:var(--h);min-height:4px;background:var(--surface2);border-radius:2px 2px 0 0;position:relative;transition:.16s;}
+.annual-bar.best,.annual-bar:hover{background:var(--accent);}
+.annual-bar:hover{transform:translateY(-3px);}
+.annual-bar span{display:none;position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);background:var(--text);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:9px;padding:5px 7px;border-radius:4px;white-space:nowrap;}
+.annual-bar:hover span{display:block;}
+.annual-month-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--subtext);}
+.annual-insights{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:22px;}
+.annual-insight{display:flex;align-items:center;gap:10px;}
+.annual-insight i{width:18px;text-align:center;color:var(--accent);}
+.annual-insight span{display:block;font-size:10px;color:var(--subtext);}
+.annual-insight strong{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--text);}
+.annual-table-wrap{overflow-x:auto;}
+.annual-table{min-width:620px;}
+.annual-table th{background:transparent;color:var(--subtext);font-family:'IBM Plex Mono',monospace;font-size:9px;}
+.annual-table tbody tr:nth-child(odd) td{background:var(--surface);}
+.annual-table td.net-col{color:var(--accent);}
+
 @media(max-width:520px){
   .cal-header{padding:16px 16px 12px;}
   .cal-header .month-num{font-size:72px;}
@@ -1392,6 +1436,16 @@ input:checked+.slider:before{
   .case-row{grid-template-columns:1fr 85px 30px;}
   .user-chip .uname{display:none;}
   .settings-panel{right:-10px;width:225px;}
+  .annual-head{align-items:center;}
+  .annual-head h2{font-size:21px;}
+  .annual-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px;margin:28px 0 38px;}
+  .annual-stat-value{font-size:18px;}
+  .annual-stat.primary .annual-stat-value{font-size:21px;}
+  .annual-chart{height:195px;gap:3px;}
+  .annual-bar-wrap{height:148px;}
+  .annual-month-label{font-size:8px;}
+  .annual-insights{grid-template-columns:1fr;gap:12px;}
+  .annual-metric{display:none;}
 }
 </style>
 </head>
@@ -2477,49 +2531,77 @@ function renderYearly(el){
   const y=S.taxYear;
   const ye=yearE(y);
   let tGross=0,tDf=0,tSS=0,tLab=0,tWht=0,tNet=0,tNetAfterWht=0;
+  const monthlyNet=Array(12).fill(0);
   const byC={};
   ye.forEach(e=>{
     const{gross,dfIncome,ss,labShare,wht,net,netAfterWht}=calc(e);
     tGross+=gross;tDf+=dfIncome;tSS+=ss;tLab+=labShare;tWht+=wht;tNet+=net;tNetAfterWht+=netAfterWht;
-    byC[e.clinicId]=byC[e.clinicId]||{dfIncome:0,wht:0,net:0,netAfterWht:0,days:new Set()};
+    const monthIndex=Number(e.date.slice(5,7))-1;
+    if(monthIndex>=0&&monthIndex<12) monthlyNet[monthIndex]+=netAfterWht;
+    byC[e.clinicId]=byC[e.clinicId]||{dfIncome:0,deductions:0,netAfterWht:0,days:new Set()};
     const b=byC[e.clinicId];
-    b.dfIncome+=dfIncome;b.wht+=wht;b.net+=net;b.netAfterWht+=netAfterWht;b.days.add(e.date);
+    b.dfIncome+=dfIncome;b.deductions+=ss+labShare+wht;b.netAfterWht+=netAfterWht;b.days.add(e.date);
   });
   const days=new Set(ye.map(e=>e.date)).size;
+  const totalDeductions=tSS+tLab+tWht;
+  const monthLabels=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const maxMonth=Math.max(...monthlyNet,0);
+  const bestIndex=maxMonth?monthlyNet.indexOf(maxMonth):-1;
+  const previousNet=yearE(y-1).reduce((sum,e)=>sum+calc(e).netAfterWht,0);
+  const growth=previousNet?((tNetAfterWht-previousNet)/previousNet)*100:null;
+  const growthLabel=growth===null?'—':`${growth>=0?'+':''}${growth.toFixed(1)}%`;
+  const sortedClinics=Object.entries(byC).sort((a,b)=>b[1].netAfterWht-a[1].netAfterWht);
 
   el.innerHTML=`
-    <div class="sec-title"><span class="badge">TAX YEAR</span> ปีภาษี ${y+543}</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button class="btn btn-ghost btn-sm" id="pY">‹ ปีก่อน</button>
-      <button class="btn btn-ghost btn-sm" id="nY">ปีหน้า ›</button>
+    <div class="annual-head">
+      <div><div class="annual-eyebrow">YEARLY OVERVIEW</div><h2>Annual income overview</h2></div>
+      <div class="annual-nav">
+        <button id="pY" aria-label="ปีก่อน"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="annual-year">${y+543}</div>
+        <button id="nY" aria-label="ปีหน้า"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
     </div>
-    <div class="tax-note">
-      <span class="solid-ico"><i class="fa-solid fa-clipboard-list"></i></span>เงินได้ประเภทนี้จัดเป็น <strong>มาตรา 40(2)</strong> — ใช้ยอด "เงินได้ 40(2) รวม" ด้านล่างเป็นฐานยื่นภาษีเงินได้บุคคลธรรมดา ส่วนยอดหัก ณ ที่จ่ายใช้เป็นเครดิตภาษีตอนยื่นแบบได้
+    <div class="annual-stats">
+      <div class="annual-stat"><div class="annual-stat-label">WORK DAYS</div><div class="annual-stat-value">${days} days</div><div class="annual-stat-note">Avg. ${days?Math.round((days/12)*10)/10:0} days / month</div></div>
+      <div class="annual-stat"><div class="annual-stat-label">SECTION 40(2) INCOME</div><div class="annual-stat-value">฿${fmt(tDf)}</div><div class="annual-stat-note">Before deductions</div></div>
+      <div class="annual-stat"><div class="annual-stat-label">TOTAL DEDUCTIONS</div><div class="annual-stat-value">฿${fmt(totalDeductions)}</div><div class="annual-stat-note">ปกส. · Lab · WHT</div></div>
+      <div class="annual-stat primary"><div class="annual-stat-label">NET INCOME</div><div class="annual-stat-value">฿${fmt(tNetAfterWht)}</div><div class="annual-stat-note">After all deductions</div></div>
     </div>
-    <div class="stat-grid">
-      <div class="stat"><div class="sl">วันที่ลงทำทั้งปี</div><div class="sv">${days} วัน</div></div>
-      <div class="stat"><div class="sl">เงินได้ 40(2) รวม</div><div class="sv">฿${fmt(tDf)}</div></div>
-      <div class="stat deduct"><div class="sl">หัก ณ ที่จ่าย ${WHT_PCT}%</div><div class="sv">฿${fmt(tWht)}</div></div>
-      <div class="stat"><div class="sl">รายได้สุทธิ (หลัง ปกส./แลป)</div><div class="sv">฿${fmt(tNet)}</div></div>
-      <div class="stat hilite"><div class="sl">คงเหลือหลังหัก ณ ที่จ่าย</div><div class="sv">฿${fmt(tNetAfterWht)}</div></div>
+
+    <div class="annual-section">
+      <div class="annual-section-head"><div class="annual-section-title"><span class="annual-badge">12 MONTHS</span> Monthly net income</div><div class="annual-metric">Total <strong>฿${fmt(tNetAfterWht)}</strong></div></div>
+      <div class="annual-chart-shell"><div class="annual-chart">
+        ${monthlyNet.map((value,index)=>`<div class="annual-month"><div class="annual-bar-wrap"><div class="annual-bar ${index===bestIndex?'best':''}" style="--h:${maxMonth?Math.max(3,(value/maxMonth)*100):0}%"><span>฿${fmt(value)}</span></div></div><div class="annual-month-label">${monthLabels[index]}</div></div>`).join('')}
+      </div></div>
+      <div class="annual-insights">
+        <div class="annual-insight"><i class="fa-solid fa-crown"></i><div><span>Best month</span><strong>${bestIndex>=0?`${monthLabels[bestIndex]} · ฿${fmt(maxMonth)}`:'—'}</strong></div></div>
+        <div class="annual-insight"><i class="fa-solid fa-calendar-day"></i><div><span>Average per work day</span><strong>${days?'฿'+fmt(tNetAfterWht/days):'—'}</strong></div></div>
+        <div class="annual-insight"><i class="fa-solid fa-arrow-trend-up"></i><div><span>Year-over-year</span><strong>${growthLabel}</strong></div></div>
+      </div>
     </div>
-    <div class="sec-title"><span class="badge">BY CLINIC</span> แยกตามคลินิก (สำหรับยื่นภาษี)</div>
-    ${!Object.keys(byC).length?`<div class="empty-state"><div class="big"><span class="solid-ico"><i class="fa-solid fa-receipt"></i></span></div>ยังไม่มีข้อมูลปีนี้</div>`:`
-    <table>
-      <thead><tr><th>คลินิก</th><th class="r">วัน</th><th class="r">เงินได้ 40(2)</th><th class="r">หัก ${WHT_PCT}%</th><th class="r">คงเหลือ</th></tr></thead>
+
+    <div class="annual-section">
+      <div class="annual-section-head"><div class="annual-section-title"><span class="annual-badge">BY CLINIC</span> Clinic comparison</div><div class="annual-metric">Sorted by net income</div></div>
+      ${!sortedClinics.length?`<div class="empty-state"><div class="big"><span class="solid-ico"><i class="fa-solid fa-receipt"></i></span></div>ยังไม่มีข้อมูลปีนี้</div>`:`
+      <div class="annual-table-wrap"><table class="annual-table">
+      <thead><tr><th>CLINIC</th><th class="r">DAYS</th><th class="r">40(2) INCOME</th><th class="r">ปกส. / LAB / WHT</th><th class="r">NET</th></tr></thead>
       <tbody>
-        ${Object.entries(byC).map(([id,b])=>{
+        ${sortedClinics.map(([id,b])=>{
           const c=byId(id);
           return`<tr>
-            <td><span class="swatch" style="background:${c?c.color:'#aaa'}"></span> ${c?c.name:'(ลบแล้ว)'}${c&&c.whtDeduct?' <span class="pill" style="font-size:9px;padding:1px 6px;">หัก 3%</span>':''}</td>
+            <td><span class="swatch" style="background:${c?c.color:'#aaa'}"></span> ${c?c.name:'(deleted)'}</td>
             <td class="r">${b.days.size}</td>
             <td class="r">฿${fmt(b.dfIncome)}</td>
-            <td class="r">฿${fmt(b.wht)}</td>
+            <td class="r">฿${fmt(b.deductions)}</td>
             <td class="r net-col">฿${fmt(b.netAfterWht)}</td>
           </tr>`;
         }).join('')}
       </tbody>
-    </table>`}`;
+      </table></div>`}
+    </div>
+    <div class="tax-note">
+      <span class="solid-ico"><i class="fa-solid fa-clipboard-list"></i></span>เงินได้ประเภทนี้จัดเป็น <strong>มาตรา 40(2)</strong> — ใช้ยอด "เงินได้ 40(2) รวม" ด้านบนเป็นฐานยื่นภาษีเงินได้บุคคลธรรมดา ส่วนยอดหัก ณ ที่จ่ายใช้เป็นเครดิตภาษีตอนยื่นแบบได้
+    </div>`;
   el.querySelector('#pY').onclick=()=>shiftYear(-1);
   el.querySelector('#nY').onclick=()=>shiftYear(1);
 }
