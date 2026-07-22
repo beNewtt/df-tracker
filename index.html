@@ -2201,10 +2201,12 @@ function downloadClinicSlip(clinicId){
   const receiptLines=rows.reduce((n,r)=>n+1+((r.labShare+r.ss+r.wht)>0?1:0),0);
   const width=600;
   const height=Math.max(760,430 + Math.max(receiptLines,1)*42);
+  const exportScale=2;
   const canvas=document.createElement('canvas');
-  canvas.width=width;
-  canvas.height=height;
+  canvas.width=width*exportScale;
+  canvas.height=height*exportScale;
   const ctx=canvas.getContext('2d');
+  ctx.scale(exportScale,exportScale);
   const bg='#FFFFFF';
   const surface='#F2F2F2';
   const border='#D8D8D8';
@@ -2231,9 +2233,12 @@ function downloadClinicSlip(clinicId){
   function txt(s,x,y,size=28,weight=600,color=text,align='left',style='normal'){
     ctx.font=`${style} ${weight} ${size}px ${font}`;
     ctx.fillStyle=color;
-    ctx.textAlign=align;
+    ctx.textAlign='left';
     ctx.textBaseline='alphabetic';
-    ctx.fillText(String(s),x,y);
+    const value=String(s);
+    const textWidth=ctx.measureText(value).width;
+    const drawX=align==='right' ? x-textWidth : align==='center' ? x-(textWidth/2) : x;
+    ctx.fillText(value,drawX,y);
   }
   function rule(y){
     ctx.save();
@@ -2291,7 +2296,7 @@ function downloadClinicSlip(clinicId){
   const link=document.createElement('a');
   const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
   link.download=`df-slip-${safeName}-${S.y}-${pad2(S.m+1)}.jpg`;
-  link.href=canvas.toDataURL('image/jpeg',0.92);
+  link.href=canvas.toDataURL('image/jpeg',0.96);
   link.click();
 }
 
