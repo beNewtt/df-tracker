@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#E8EAF0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="DF Tracker"/>
 <title>DF Tracker</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -65,10 +71,11 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color: var(--subtext)
 .brand{display:flex;align-items:center;gap:10px;}
 .brand .mark{
   width:40px;height:40px;border-radius:10px;
-  background:var(--accent);color:var(--bg);
+  background:#11131f;color:#fff;padding:4px;
   display:flex;align-items:center;justify-content:center;
   font-weight:800;font-family:'IBM Plex Mono',monospace;font-size:13px;flex-shrink:0;
 }
+.brand .mark svg{display:block;width:100%;height:100%;}
 .brand h1{font-size:18px;font-weight:800;color:var(--text);;letter-spacing:.5px;}
 .brand .sub{font-size:11px;color:var(--subtext);margin-top:1px;}
 nav.tabs{display:flex;gap:4px;background:var(--surface);border-radius:999px;padding:4px;}
@@ -84,6 +91,7 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 .user-chip .uname{color:var(--text);font-size:12px;font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#7CE0A8;flex-shrink:0;}
 .sync-dot.saving{background:#F2C14E;}
+.sync-dot.offline{background:var(--danger);}
 
 /* Settings gear + dropdown panel (theme picker + logout) */
 .settings-wrap{position:relative;display:flex;align-items:center;}
@@ -164,6 +172,8 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
 .settings-data-btn:hover{
   background:var(--surface2);color:var(--bg);
 }
+.settings-install-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:8px;background:var(--surface);color:var(--text);}
+.settings-install-btn:hover{background:var(--accent);color:var(--bg);}
 
 .cal-wrap{
   background:var(--bg);
@@ -1503,7 +1513,8 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, onSnapshot, writeBatch
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, setDoc, onSnapshot, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1518,8 +1529,23 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
-const db = getFirestore(fbApp);
+let db;
+try{
+  db=initializeFirestore(fbApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+}catch(err){
+  console.warn('Offline cache unavailable, using standard Firestore:',err);
+  db=getFirestore(fbApp);
+}
 const provider = new GoogleAuthProvider();
+
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  deferredInstallPrompt=event;
+});
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(err=>console.warn('Service worker registration failed:',err)));
+}
 
 /* ═══════════ Constants ═══════════ */
 const SS_PER_CASE   = 100;
@@ -1932,8 +1958,18 @@ function entriesDocRef(uidVal){ return doc(db,'users',uidVal,'appData','entries'
 function setSyncing(v){
   syncBusy=v;
   const dot=document.getElementById('syncDot');
-  if(dot) dot.classList.toggle('saving', v);
+  if(dot) dot.classList.toggle('saving', v&&navigator.onLine);
 }
+function updateOnlineStatus(){
+  const dot=document.getElementById('syncDot');
+  if(!dot) return;
+  const offline=!navigator.onLine;
+  dot.classList.toggle('offline',offline);
+  if(offline) dot.classList.remove('saving');
+  dot.title=offline?'ออฟไลน์ · ข้อมูลจะ sync เมื่อกลับมาออนไลน์':'ออนไลน์ · sync พร้อม';
+}
+window.addEventListener('online',updateOnlineStatus);
+window.addEventListener('offline',updateOnlineStatus);
 
 async function saveC(list){
   clinics=list;
@@ -2105,7 +2141,15 @@ function renderApp(){
     <div id="app-inner">
       <div class="topbar">
         <div class="brand">
-          <div class="mark">DF</div>
+          <div class="mark" aria-label="DF Ledger logo">
+            <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+              <text x="7" y="28" fill="#fff" font-family="IBM Plex Mono,monospace" font-size="24" font-weight="700">DF</text>
+              <path d="M8 39h48" fill="none" stroke="#44bdf0" stroke-width="4"/>
+              <path d="M8 49h30" fill="none" stroke="#8a5cf6" stroke-width="4"/>
+              <path d="M45 49h11" fill="none" stroke="#ff3f4e" stroke-width="4"/>
+              <circle cx="53" cy="18" r="4" fill="#45cd91"/>
+            </svg>
+          </div>
           <div><h1>DF TRACKER</h1><div class="sub">บันทึกรายได้คลินิกรายวัน</div></div>
         </div>
         <nav class="tabs">
@@ -2137,6 +2181,7 @@ function renderApp(){
   const gearBtn=document.getElementById('gearBtn');
   gearBtn.onclick=(ev)=>{ev.stopPropagation();S.searchOpen=false;S.settingsOpen=!S.settingsOpen;renderApp();};
   wireSettingsPanel();
+  updateOnlineStatus();
   renderContent(); renderModals();
 }
 function syncTabs(){
@@ -2162,6 +2207,20 @@ function downloadDataBackup(){
   link.click();
   link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function requestAppInstall(){
+  if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true){
+    alert('DF Tracker ถูกติดตั้งเป็นแอปแล้ว');
+    return;
+  }
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    return;
+  }
+  alert('iPhone / iPad: เปิดเว็บด้วย Safari แล้วกด Share → Add to Home Screen → เปิด Open as Web App');
 }
 
 async function importDataBackup(file){
@@ -2219,6 +2278,7 @@ function buildSettingsPanel(){
         <button type="button" class="btn btn-sm settings-data-btn" id="backupExportBtn"><i class="fa-solid fa-download"></i>สำรอง</button>
         <button type="button" class="btn btn-sm settings-data-btn" id="backupImportBtn"><i class="fa-solid fa-upload"></i>นำเข้า</button>
       </div>
+      <button type="button" class="btn btn-sm settings-install-btn" id="installAppBtn"><i class="fa-solid fa-mobile-screen-button"></i>ติดตั้งแอป</button>
       <input type="file" id="backupFileInput" accept=".json,application/json" hidden>
       <div class="settings-divider"></div>
       <button type="button" class="btn btn-danger btn-sm" id="logoutBtn" style="width:100%;">ออกจากระบบ</button>
@@ -2238,7 +2298,9 @@ function wireSettingsPanel(){
   const exportBtn=document.getElementById('backupExportBtn');
   const importBtn=document.getElementById('backupImportBtn');
   const fileInput=document.getElementById('backupFileInput');
+  const installBtn=document.getElementById('installAppBtn');
   if(exportBtn) exportBtn.onclick=downloadDataBackup;
+  if(installBtn) installBtn.onclick=requestAppInstall;
   if(importBtn && fileInput){
     importBtn.onclick=()=>fileInput.click();
     fileInput.onchange=()=>{
