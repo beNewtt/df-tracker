@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#11131F"/>
+  <text x="88" y="224" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="158" font-weight="700" fill="#FFFFFF">DF</text>
+  <path d="M88 310H424" fill="none" stroke="#44BDF0" stroke-width="28"/>
+  <path d="M88 388H292" fill="none" stroke="#8A5CF6" stroke-width="28"/>
+  <path d="M342 388H424" fill="none" stroke="#FF3F4E" stroke-width="28"/>
+  <circle cx="402" cy="136" r="28" fill="#45CD91"/>
+</svg>

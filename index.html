@@ -42,23 +42,38 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color: var(--subtext)
 
 .login-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
-  flex-direction:column;gap:22px;padding:20px;text-align:center;
+  flex-direction:column;padding:20px;text-align:center;
 }
 .login-screen .mark-big{
-  width:76px;height:76px;border-radius:18px;background:var(--blue);color:var(--cream);
-  display:flex;align-items:center;justify-content:center;font-weight:800;
-  font-family:'IBM Plex Mono',monospace;font-size:22px;
+  width:88px;height:88px;border-radius:18px;background:#11131f;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 28px rgba(31,42,68,.12);
 }
-.login-screen h1{color:var(--blue);font-size:24px;font-weight:800;letter-spacing:.5px;}
-.login-screen p{color:rgba(237,234,217,.7);font-size:13px;max-width:280px;}
+.login-screen .mark-big svg{display:block;width:72%;height:72%;}
+.login-screen h1{
+  margin:24px 0 4px;color:var(--text);
+  font:700 30px/1.1 'IBM Plex Mono',monospace;letter-spacing:0;
+}
+.login-screen .login-tagline{
+  margin:0;color:var(--subtext);
+  font:500 12px/1.4 'IBM Plex Mono',monospace;
+}
 .gbtn{
-  display:flex;align-items:center;gap:10px;background:#F3F1E9;color:#202124;
-  border:none;border-radius:12px;padding:13px 22px;font-family:'Sarabun',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;transition:.15s;box-shadow:0 4px 14px rgba(0,0,0,.15);
+  width:min(100%,280px);min-height:54px;margin-top:30px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  background:var(--surface);color:var(--text);
+  border:none;border-radius:8px;padding:12px 18px;font-family:'Sarabun',sans-serif;
+  font-size:15px;font-weight:700;cursor:pointer;
+  transition:background-color .15s,color .15s,transform .15s;
 }
-.gbtn:hover{background:#fff;}
+.gbtn:hover{background:#11131f;color:#fff;transform:translateY(-1px);}
+.gbtn:active{transform:translateY(0);}
 .gbtn svg{width:20px;height:20px;flex-shrink:0;}
-.login-err{color:#FFB4B4;font-size:12px;max-width:280px;}
+.login-privacy{
+  margin-top:18px;color:var(--subtext);
+  font:500 10px 'IBM Plex Mono',monospace;
+}
+.login-err{margin-top:14px;color:var(--danger);font-size:12px;max-width:280px;}
 .loading-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   color:var(--blue);font-size:14px;font-weight:700;opacity:.7;
@@ -126,6 +141,19 @@ nav.tabs button.active{background:var(--accent);color:var(--bg);}
     color:var(--blue-dk);
     background:transparent;
 }
+
+html[data-theme="dots"] .brand-df{color:#F94348;}
+html[data-theme="dots"] .user-chip img{border-color:#9261FF;}
+html[data-theme="dots"] #searchBtn{color:#3CC5F8;}
+html[data-theme="dots"] #gearBtn{color:#4ACB8A;}
+
+html[data-theme="oblivion"] .brand-df{color:#9A90B4;}
+html[data-theme="oblivion"] .user-chip img{border-color:#8DB14B;}
+html[data-theme="oblivion"] #searchBtn{color:#FCA321;}
+html[data-theme="oblivion"] #gearBtn{color:#2984A5;}
+html[data-theme="oblivion"] #logoutBtn{background:#DD452E;color:#F7F5F1;}
+html[data-theme="oblivion"] #logoutBtn:hover{background:#C33D29;color:#fff;}
+
 .settings-panel{
   position:absolute;top:calc(100% + 10px);right:0;z-index:60;
   width:280px;background:var(--cream);border-radius:14px;
@@ -1686,17 +1714,87 @@ lemon:{
   },
 
   dots:{
-    label:'Dots',
-    bg:'#11151F',
-    surface:'#1B2130',
-    surface2:'#252C3D',
-    text:'#F4F4F0',
-    subtext:'#7C879E',
-    accent:'#F8F8F2',
-    accentHover:'#DADAD2',
-    secondary:'#7C879E',
-    border:'#F4F4F0',
-    danger:'#E05D5D'
+    label:'dots',
+    bg:'#121520',
+    surface:'#1B1E2C',
+    surface2:'#25293A',
+    text:'#FFFFFF',
+    subtext:'#676E8A',
+    accent:'#FFFFFF',
+    accentHover:'#E6E6E8',
+    secondary:'#676E8A',
+    border:'#2B3042',
+    danger:'#F94348'
+  },
+
+  sewingTinLight:{
+    label:'sewing tin light',
+    bg:'#FFFFFF',
+    surface:'#C8CEDF',
+    surface2:'#B5BFD8',
+    text:'#2D2076',
+    subtext:'#385ECA',
+    accent:'#2D2076',
+    accentHover:'#241966',
+    secondary:'#385ECA',
+    border:'#C8CEDF',
+    danger:'#A9445A'
+  },
+
+  milkshake:{
+    label:'milkshake',
+    bg:'#FFFFFF',
+    surface:'#DDEFF3',
+    surface2:'#C9E6ED',
+    text:'#212B43',
+    subtext:'#62CFE6',
+    accent:'#212B43',
+    accentHover:'#141B2C',
+    secondary:'#62CFE6',
+    border:'#DDEFF3',
+    danger:'#C45E72'
+  },
+
+  cheesecake:{
+    label:'cheesecake',
+    bg:'#FDF0D5',
+    surface:'#F3E2BF',
+    surface2:'#EAD4A8',
+    text:'#302A1D',
+    subtext:'#D91C81',
+    accent:'#8E2949',
+    accentHover:'#76203C',
+    secondary:'#D91C81',
+    border:'#F3E2BF',
+    danger:'#8E2949'
+  },
+
+  rosePine:{
+    label:'rose pine',
+    bg:'#1F1D27',
+    surface:'#282533',
+    surface2:'#353140',
+    text:'#E0DEF4',
+    subtext:'#C4A7E7',
+    accent:'#9CCFD8',
+    accentHover:'#83BAC5',
+    secondary:'#C4A7E7',
+    border:'#35313F',
+    danger:'#EB6F92'
+  },
+
+  oblivion:{
+    label:'oblivion',
+    bg:'#313231',
+    surface:'#3A3B3B',
+    surface2:'#484949',
+    text:'#F7F5F1',
+    subtext:'#5D6263',
+    accent:'#A5A096',
+    accentHover:'#8F8A81',
+    secondary:'#9A90B4',
+    border:'#4B4C4C',
+    danger:'#DD452E'
   },
 
   evilEye:{
@@ -1915,6 +2013,7 @@ function loadThemeKey(){
 function applyTheme(key){
   const th=THEMES[key]||THEMES.terrazzo;
   const root=document.documentElement.style;
+  document.documentElement.dataset.theme=key;
 
   root.setProperty('--bg',th.bg);
   root.setProperty('--surface',th.surface);
@@ -1924,6 +2023,7 @@ function applyTheme(key){
   root.setProperty('--accent',th.accent);
   root.setProperty('--accent-hover',th.accentHover);
   root.setProperty('--border',th.border);
+  root.setProperty('--danger',th.danger);
 
   root.setProperty('--cream',th.bg);
   root.setProperty('--cream-dk',th.surface);
@@ -1939,6 +2039,7 @@ function applyTheme(key){
   root.setProperty('--red',th.danger);
   root.setProperty('--red-lt',mixHex(th.danger,th.bg,0.82));
   root.setProperty('--gold','#C9A227');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',th.bg);
 
   localStorage.setItem(THEME_KEY,key);
   if(typeof S!=='undefined') S.themeKey=key;
@@ -2037,13 +2138,22 @@ function tryFirstRender(){
 function renderLogin(errMsg){
   document.getElementById('app').innerHTML=`
     <div class="login-screen">
-      <div class="mark-big">DF</div>
+      <div class="mark-big" aria-label="DF Ledger logo">
+        <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+          <text x="7" y="28" fill="#fff" font-family="IBM Plex Mono,monospace" font-size="24" font-weight="700">DF</text>
+          <path d="M8 39h48" fill="none" stroke="#44bdf0" stroke-width="4"/>
+          <path d="M8 49h30" fill="none" stroke="#8a5cf6" stroke-width="4"/>
+          <path d="M45 49h11" fill="none" stroke="#ff3f4e" stroke-width="4"/>
+          <circle cx="53" cy="18" r="4" fill="#45cd91"/>
+        </svg>
+      </div>
       <h1>DF TRACKER</h1>
-      <p>เข้าสู่ระบบด้วย Google เพื่อบันทึกและ sync ข้อมูลข้ามเครื่อง</p>
+      <p class="login-tagline">daily clinic income ledger</p>
       <button class="gbtn" id="loginBtn">
         <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.3-2 14-5.6l-6.4-5.4c-2.1 1.5-4.8 2.5-7.6 2.5-5.3 0-9.7-3.1-11.4-7.6l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.4 5.4C39.9 37 44 31.4 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-        เข้าสู่ระบบด้วย Google
+        Continue with Google
       </button>
+      <p class="login-privacy">PRIVATE DATA · CLOUD SYNC</p>
       ${errMsg?`<div class="login-err">${errMsg}</div>`:''}
     </div>`;
   document.getElementById('loginBtn').onclick=()=>{
@@ -2150,7 +2260,7 @@ function renderApp(){
               <circle cx="53" cy="18" r="4" fill="#45cd91"/>
             </svg>
           </div>
-          <div><h1>DF TRACKER</h1><div class="sub">บันทึกรายได้คลินิกรายวัน</div></div>
+          <div><h1><span class="brand-df">DF</span> TRACKER</h1><div class="sub">บันทึกรายได้คลินิกรายวัน</div></div>
         </div>
         <nav class="tabs">
           <button data-tab="calendar" class="${S.tab==='calendar'?'active':''}">ปฏิทิน</button>
