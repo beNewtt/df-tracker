@@ -2216,7 +2216,7 @@ function calc(e){
   const dfPct=Number(e.dfPct)||0;
   const dfIncome=Math.round(gross*dfPct/100);
   const totalCases=cases.length;
-  const ssCases=Number(e.ssCaseCount)||0;
+  const ssCases=e.ssDeduct?totalCases:0;
   const labTot=Number(e.labFeeTotal)||0;
   const labShare=Math.round(labTot*LAB_SPLIT_PCT/100);
   const ss=e.ssDeduct?ssCases*SS_PER_CASE:0;
@@ -2986,6 +2986,17 @@ function buildEntryEditor(ctx){
     ?{...ctx.entry,cases:(ctx.entry.cases||[]).map(c=>({...c}))}
     :{id:uid(),clinicId:'',shift:'evening',dfPct:40,cases:[],ssDeduct:false,ssCaseCount:0,xrayFee:false,whtDeduct:false,labFeeTotal:0,note:''};
 
+  function applyClinicSettings(){
+    const clinic=byId(draft.clinicId);
+    if(!clinic) return;
+    draft.dfPct=Number(clinic.dfPct)||0;
+    draft.ssDeduct=!!clinic.ssDeduct;
+    draft.whtDeduct=!!clinic.whtDeduct;
+    draft.xrayFee=!!clinic.xrayFee;
+    draft.ssCaseCount=draft.ssDeduct?(draft.cases||[]).length:0;
+  }
+  applyClinicSettings();
+
   function formula(){
     const{gross,dfPct,dfIncome,ssCases,ss,labShare,net}=calc(draft);
     let f=`฿${fmt(gross)} × ${dfPct}% = ฿${fmt(dfIncome)}`;
@@ -3009,13 +3020,6 @@ function buildEntryEditor(ctx){
           </select>
         </div>
         <div class="field">
-          <label>DF % (สัดส่วนที่หมอได้)</label>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <input type="number" id="fDF" value="${draft.dfPct||0}" min="0" max="100" style="width:90px;border:2px solid var(--blue);border-radius:9px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;text-align:center;color:var(--blue);background:rgba(255,255,255,.05);"/>
-            <span style="font-size:13px;color:var(--blue);opacity:.6;">% จาก Gross ฿${fmt(gross)} = <strong>฿${fmt(dfIncome)}</strong></span>
-          </div>
-        </div>
-        <div class="field">
           <label>ช่วงที่ทำ</label>
           <div class="seg">
             <button type="button" data-sh="evening" class="${draft.shift==='evening'?'active':''}"><i class="fa-solid fa-moon shift-ico"></i>ช่วงเย็น</button>
@@ -3036,46 +3040,17 @@ function buildEntryEditor(ctx){
           <button class="add-case-btn" id="addCase"><i class="fa-solid fa-plus icon-inline"></i>เพิ่มเคส</button>
         </div>
 
-        <div class="ss-box">
-          <div class="ss-top">
-            <div>
-              <div class="ss-label">หักประกันสังคม</div>
-              <div class="ss-hint">ระบุจำนวนเคสที่เป็นงาน ปกส. แยกจากเคสทั้งหมด</div>
-            </div>
-            <label class="switch"><input type="checkbox" id="fSS"${draft.ssDeduct?' checked':''}><span class="slider"></span></label>
-          </div>
-          ${draft.ssDeduct?`
-            <div class="ss-count-row">
-              <label>จำนวนเคส ปกส.</label>
-              <input type="number" id="fSSCount" value="${draft.ssCaseCount||0}" min="0" placeholder="0"/>
-              <span style="font-size:12px;color:var(--blue);opacity:.6;">เคส × ฿${SS_PER_CASE}</span>
-            </div>
-            ${ssCases>0?`<div class="ss-calc"><span>${ssCases} เคส × ฿${SS_PER_CASE}</span><span class="sv">−฿${fmt(ss)}</span></div>`:''}
-          `:``}
-        </div>
-
         <div class="lab-box">
           <label>ค่าแลปรวม (บาท) — หมอออก ${LAB_SPLIT_PCT}%</label>
           <input type="number" id="fLab" value="${draft.labFeeTotal||''}" placeholder="0" min="0"/>
           ${labTot>0?`<div class="lab-calc"><span>หมอออก ${LAB_SPLIT_PCT}% (คลินิก ${100-LAB_SPLIT_PCT}%)</span><span class="lv">−฿${fmt(labShare)}</span></div>`:''}
         </div>
 
-        <div class="ss-box">
-          <div class="ss-top">
-            <div>
-              <div class="ss-label">หัก ณ ที่จ่าย ${WHT_PCT}% (40(2))</div>
-              <div class="ss-hint">คำนวณจาก DF Income — ใช้สำหรับสรุปยื่นภาษีรายปี</div>
-            </div>
-            <label class="switch"><input type="checkbox" id="fWht"${draft.whtDeduct?' checked':''}><span class="slider"></span></label>
-          </div>
-          ${draft.whtDeduct&&wht>0?`<div class="ss-calc wht-calc"><span>DF ฿${fmt(dfIncome)} × ${WHT_PCT}%</span><span class="sv">−฿${fmt(wht)}</span></div>`:''}
-        </div>
-
         ${cl?.xrayFee?`<div style="margin-bottom:12px;"><span class="pill"><span class="solid-ico"><i class="fa-solid fa-camera"></i></span>คลินิกนี้ได้ค่าฟิล์ม</span></div>`:''}
 
         <div class="field">
           <label>หมายเหตุ</label>
-          <input type="text" id="fNote" value="${draft.note||''}" placeholder="เคสพิเศษ, โน้ตอื่นๆ"/>
+          <input type="text" id="fNote" value="${draft.note||''}" placeholder=""/>
         </div>
 
         <div style="font-size:12px;color:var(--blue);opacity:.55;margin-top:10px;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;">
@@ -3099,19 +3074,14 @@ function buildEntryEditor(ctx){
   function wire(){
     wrap.querySelector('#fClin').onchange=e=>{
       draft.clinicId=e.target.value;
-      const c=byId(draft.clinicId);
-      if(c && isNew){draft.dfPct=c.dfPct||40;draft.ssDeduct=!!c.ssDeduct;draft.xrayFee=!!c.xrayFee;draft.whtDeduct=!!c.whtDeduct;}
+      applyClinicSettings();
       paint();
     };
-    wrap.querySelector('#fDF').oninput=e=>{draft.dfPct=e.target.value;paint();};
     wrap.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>{draft.shift=b.dataset.sh;paint();});
     wrap.querySelectorAll('.cdesc').forEach(inp=>inp.oninput=e=>{draft.cases[+e.target.dataset.i].desc=e.target.value;});
     wrap.querySelectorAll('.camt').forEach(inp=>inp.oninput=e=>{draft.cases[+e.target.dataset.i].amount=e.target.value;refreshNet();});
     wrap.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{draft.cases.splice(+b.dataset.rm,1);paint();});
     wrap.querySelector('#addCase').onclick=()=>{draft.cases.push({id:uid(),desc:'',amount:''});paint();};
-    wrap.querySelector('#fSS').onchange=e=>{draft.ssDeduct=e.target.checked;paint();};
-    wrap.querySelector('#fWht').onchange=e=>{draft.whtDeduct=e.target.checked;paint();};
-    const ssc=wrap.querySelector('#fSSCount');if(ssc) ssc.oninput=e=>{draft.ssCaseCount=e.target.value;refreshNet();};
     wrap.querySelector('#fLab').oninput=e=>{draft.labFeeTotal=e.target.value;refreshNet();};
     wrap.querySelector('#fNote').oninput=e=>{draft.note=e.target.value;};
     wrap.querySelector('#cancelE').onclick=()=>{S.entryEditor=null;renderModals();};
@@ -3135,6 +3105,7 @@ function buildEntryEditor(ctx){
 
   function save(){
     if(!draft.clinicId){alert('กรุณาเลือกคลินิก');return;}
+    applyClinicSettings();
     const clean={...draft,cases:draft.cases.map(c=>({...c,amount:Number(c.amount)||0})),dfPct:Number(draft.dfPct)||0,labFeeTotal:Number(draft.labFeeTotal)||0,ssCaseCount:Number(draft.ssCaseCount)||0};
     const list=entries[ctx.date]||[];
     const idx=list.findIndex(e=>e.id===clean.id);
@@ -3167,7 +3138,7 @@ function buildClinicEditor(c){
           <label>DF % ของคลินิกนี้ (ค่าตั้งต้น)</label>
           <div style="display:flex;align-items:center;gap:10px;">
             <input type="number" id="cDF" value="${d.dfPct||0}" min="0" max="100" style="width:90px;border:2px solid var(--blue);border-radius:9px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;text-align:center;color:var(--blue);background:rgba(255,255,255,.05);"/>
-            <span style="font-size:12px;color:var(--blue);opacity:.6;">% จาก Gross — ปรับได้ทีละรายการ</span>
+            <span style="font-size:12px;color:var(--blue);opacity:.6;">% จาก Gross — ใช้อัตโนมัติเมื่อเลือกคลินิก</span>
           </div>
         </div>
         <div class="field">
@@ -3178,7 +3149,7 @@ function buildClinicEditor(c){
         </div>
         <div class="ss-box" style="margin-bottom:10px;">
           <div class="ss-top">
-            <div><div class="ss-label">หักปกส. เป็นค่าตั้งต้น</div><div class="ss-hint">฿${SS_PER_CASE} × เคส ปกส. — ปรับได้ทีละวัน</div></div>
+            <div><div class="ss-label">หักปกส. อัตโนมัติ</div><div class="ss-hint">฿${SS_PER_CASE} × ทุกเคสในรายการของคลินิกนี้</div></div>
             <label class="switch"><input type="checkbox" id="cSS"${d.ssDeduct?' checked':''}><span class="slider"></span></label>
           </div>
         </div>
