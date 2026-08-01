@@ -1760,7 +1760,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, setDoc, onSnapshot, writeBatch, runTransaction
+  doc, setDoc, onSnapshot, writeBatch, runTransaction, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -2265,7 +2265,7 @@ function applyTheme(key){
 function uid(){return Math.random().toString(36).slice(2,9);}
 
 /* ═══════════ Data (Firestore, per-user) ═══════════ */
-let clinics=[], entries={}, monthLocks={}, plans={};
+let clinics=[], entries={}, monthLocks={}, plans={}, entryTombstones={};
 let currentUser=null;
 let clinicsLoaded=false, entriesLoaded=false, plansLoaded=false;
 let unsubClinics=null, unsubEntries=null, unsubPlans=null;
@@ -2304,14 +2304,21 @@ async function saveC(list){
     setSyncing(false);
   }
 }
-async function saveE(obj){
-  entries=obj;
-  if(!currentUser) return;
+async function saveEntryDate(date,list){
+  if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนบันทึกรายการ');
+  setSyncing(true);
   try{
-    setSyncing(true);
-    await setDoc(entriesDocRef(currentUser.uid), {data:obj}, {merge:true});
-  }catch(err){
-    alert('บันทึกรายการไม่สำเร็จ: '+err.message);
+    const cleanList=Array.isArray(list)?list:[];
+    let savedList=cleanList;
+    await runTransaction(db,async transaction=>{
+      const ref=entriesDocRef(currentUser.uid);
+      const snap=await transaction.get(ref);
+      const serverData=snap.exists()?snap.data():{};
+      const tombstones=serverData.entryTombstones||{};
+      savedList=cleanList.filter(entry=>!tombstones[String(entry?.id||'')]);
+      transaction.set(ref,{data:{[date]:savedList}}, {merge:true});
+    });
+    entries={...entries,[date]:savedList};
   }finally{
     setSyncing(false);
   }
@@ -2339,17 +2346,24 @@ async function deleteEntryById(date,entryId){
   if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนลบรายการ');
   setSyncing(true);
   try{
-    let nextEntries={};
+    let nextList=[];
     await runTransaction(db,async transaction=>{
       const ref=entriesDocRef(currentUser.uid);
       const snap=await transaction.get(ref);
       const serverData=snap.exists()?snap.data():{};
-      nextEntries={...(serverData.data||{})};
-      nextEntries[date]=(nextEntries[date]||[]).filter(entry=>entry.id!==entryId);
-      if(!nextEntries[date].length) delete nextEntries[date];
-      transaction.set(ref,{data:nextEntries,monthLocks:serverData.monthLocks||{}}, {merge:true});
+      const serverList=Array.isArray(serverData.data?.[date])?serverData.data[date]:[];
+      nextList=serverList.filter(entry=>String(entry?.id||'')!==String(entryId||''));
+      const tombstones={...(serverData.entryTombstones||{})};
+      if(entryId) tombstones[String(entryId)]=Date.now();
+      transaction.set(ref,{
+        data:{[date]:nextList.length?nextList:deleteField()},
+        entryTombstones:tombstones
+      }, {merge:true});
     });
-    entries=nextEntries;
+    entries={...entries};
+    if(nextList.length) entries[date]=nextList;
+    else delete entries[date];
+    if(entryId) entryTombstones={...entryTombstones,[String(entryId)]:Date.now()};
   }finally{
     setSyncing(false);
   }
@@ -2451,6 +2465,7 @@ function startListening(uidVal){
   unsubEntries = onSnapshot(entriesDocRef(uidVal), snap=>{
     const data=snap.exists()?snap.data():{};
     entries = data.data || {};
+    entryTombstones = data.entryTombstones || {};
     monthLocks = data.monthLocks || {};
     entriesLoaded=true;
     tryFirstRender();
@@ -2597,12 +2612,15 @@ function calc(e){
   const netAfterWht=net-wht;
   return{gross,dfPct,dfIncome,totalCases,ssCases,labTot,labShare,ss,wht,net,netAfterWht};
 }
-function dayE(d){return entries[d]||[];}
+function dayE(d){
+  const list=Array.isArray(entries[d])?entries[d]:[];
+  return list.filter(entry=>!entryTombstones[String(entry?.id||'')]);
+}
 function yearE(y){
   const out=[];
   Object.keys(entries).forEach(d=>{
     const yy=Number(d.split('-')[0]);
-    if(yy===y) entries[d].forEach(e=>out.push({date:d,...e}));
+    if(yy===y) dayE(d).forEach(e=>out.push({date:d,...e}));
   });
   return out;
 }
@@ -2610,7 +2628,7 @@ function monthE(y,m){
   const out=[];
   Object.keys(entries).forEach(d=>{
     const[yy,mm]=d.split('-').map(Number);
-    if(yy===y&&mm-1===m) entries[d].forEach(e=>out.push({date:d,...e}));
+    if(yy===y&&mm-1===m) dayE(d).forEach(e=>out.push({date:d,...e}));
   });
   return out;
 }
@@ -3575,6 +3593,7 @@ function buildDayModal(date){
   wrap.className='overlay';
   wrap.onclick=ev=>{if(ev.target===wrap){S.dayModal=null;renderModals();}};
   const list=dayE(date);
+  const plan=plans[date]||null;
   const[yy,mm,dd]=date.split('-').map(Number);
   const locked=isDateLocked(date);
   wrap.innerHTML=`
@@ -3582,6 +3601,15 @@ function buildDayModal(date){
       <div class="modal-h">
         <h2>${dd} ${MN[mm-1]} ${yy+543}</h2>
       </div>
+      ${plan?`<div class="entry-card day-plan-card calendar-plan-${plan.type}">
+        <div class="ec-top">
+          <div>
+            <div class="ec-name">${esc(plannerPlanLabel(plan))}</div>
+            <div class="ec-meta">แผนที่บันทึกไว้${plan.note?` · ${esc(plan.note)}`:''}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" id="deleteDayPlan"><i class="fa-solid fa-trash icon-inline"></i>ลบแผน</button>
+        </div>
+      </div>`:''}
       ${!list.length?`<div class="empty-state-cream"><div class="big"><span class="solid-ico"><i class="fa-solid fa-calendar-day"></i></span></div>ยังไม่มีรายการวันนี้</div>`:
         list.map(e=>{
           const c=byId(e.clinicId);
@@ -3625,6 +3653,19 @@ function buildDayModal(date){
       </div>
     </div>`;
   wrap.querySelector('#closeDay').onclick=()=>{S.dayModal=null;renderModals();};
+  const deleteDayPlan=wrap.querySelector('#deleteDayPlan');
+  if(deleteDayPlan) deleteDayPlan.onclick=async()=>{
+    if(!confirm(`ลบแผนวันที่ ${dd} ${MN[mm-1]} ${yy+543}?`)) return;
+    deleteDayPlan.disabled=true;
+    try{
+      await deletePlannerDate(date);
+      delete plans[date];
+      renderModals();renderContent();
+    }catch(error){
+      deleteDayPlan.disabled=false;
+      alert('ลบแผนไม่สำเร็จ: '+error.message);
+    }
+  };
   const addEntry=wrap.querySelector('#addEntry');
   if(addEntry) addEntry.onclick=()=>{S.entryEditor={date,entry:null};renderModals();};
   wrap.querySelectorAll('[data-edit]').forEach(b=>{
@@ -3775,7 +3816,7 @@ function buildEntryEditor(ctx){
     if(wc) wc.innerHTML=`<span>DF ฿${fmt(dfIncome)} × ${WHT_PCT}%</span><span class="sv">−฿${fmt(wht)}</span>`;
   }
 
-  function save(){
+  async function save(){
     if(isDateLocked(ctx.date)){alert('เดือนนี้ปิดแล้ว กรุณาปลดล็อกจากหน้าสรุปเดือนก่อนแก้ไข');S.entryEditor=null;renderModals();return;}
     if(!draft.clinicId){alert('กรุณาเลือกคลินิก');return;}
     const planned=plans[ctx.date];
@@ -3787,11 +3828,18 @@ function buildEntryEditor(ctx){
     applyClinicSettings();
     if(draft.ssDeduct && (Number(draft.ssCaseCount)||0)>draft.cases.length){alert('จำนวนเคส ปกส. ต้องไม่เกินจำนวนเคสทั้งหมด');return;}
     const clean={...draft,cases:draft.cases.map(c=>({...c,amount:Number(c.amount)||0})),dfPct:Number(draft.dfPct)||0,labFeeTotal:Number(draft.labFeeTotal)||0,ssCaseCount:Number(draft.ssCaseCount)||0};
-    const list=entries[ctx.date]||[];
+    const list=dayE(ctx.date).map(entry=>({...entry,cases:(entry.cases||[]).map(item=>({...item}))}));
     const idx=list.findIndex(e=>e.id===clean.id);
     if(idx>=0) list[idx]=clean; else list.push(clean);
-    const newEntries={...entries,[ctx.date]:list};
-    saveE(newEntries);S.entryEditor=null;renderModals();renderContent();
+    const saveButton=wrap.querySelector('#saveE');
+    if(saveButton) saveButton.disabled=true;
+    try{
+      await saveEntryDate(ctx.date,list);
+      S.entryEditor=null;renderModals();renderContent();
+    }catch(error){
+      if(saveButton) saveButton.disabled=false;
+      alert('บันทึกรายการไม่สำเร็จ: '+error.message);
+    }
   }
   async function del2(){
     if(isDateLocked(ctx.date)){alert('เดือนนี้ปิดแล้ว กรุณาปลดล็อกจากหน้าสรุปเดือนก่อนลบ');S.entryEditor=null;renderModals();return;}
