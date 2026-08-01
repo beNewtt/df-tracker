@@ -2316,6 +2316,45 @@ async function saveE(obj){
     setSyncing(false);
   }
 }
+
+async function deleteClinicById(clinicId){
+  if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนลบคลินิก');
+  setSyncing(true);
+  try{
+    let next=[];
+    await runTransaction(db,async transaction=>{
+      const ref=clinicsDocRef(currentUser.uid);
+      const snap=await transaction.get(ref);
+      const serverList=snap.exists()&&Array.isArray(snap.data().list)?snap.data().list:[];
+      next=serverList.filter(clinic=>clinic.id!==clinicId);
+      transaction.set(ref,{list:next});
+    });
+    clinics=next;
+  }finally{
+    setSyncing(false);
+  }
+}
+
+async function deleteEntryById(date,entryId){
+  if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนลบรายการ');
+  setSyncing(true);
+  try{
+    let nextEntries={};
+    await runTransaction(db,async transaction=>{
+      const ref=entriesDocRef(currentUser.uid);
+      const snap=await transaction.get(ref);
+      const serverData=snap.exists()?snap.data():{};
+      nextEntries={...(serverData.data||{})};
+      nextEntries[date]=(nextEntries[date]||[]).filter(entry=>entry.id!==entryId);
+      if(!nextEntries[date].length) delete nextEntries[date];
+      transaction.set(ref,{data:nextEntries,monthLocks:serverData.monthLocks||{}}, {merge:true});
+    });
+    entries=nextEntries;
+  }finally{
+    setSyncing(false);
+  }
+}
+
 async function saveMonthLocks(obj){
   monthLocks=obj;
   if(!currentUser) return;
@@ -3224,8 +3263,16 @@ function renderClinics(el){
         </div>
       </div>`).join('');
     list.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{S.clinicEditor={...byId(b.dataset.e)};renderModals();});
-    list.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
-      if(confirm('ลบคลินิกนี้?')){saveC(clinics.filter(c=>c.id!==b.dataset.d));renderClinics(el);}
+    list.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{
+      if(!confirm('ลบคลินิกนี้?')) return;
+      b.disabled=true;
+      try{
+        await deleteClinicById(b.dataset.d);
+        renderClinics(el);
+      }catch(error){
+        b.disabled=false;
+        alert('ลบคลินิกไม่สำเร็จ: '+error.message);
+      }
     });
   }
   el.querySelector('#addC').onclick=()=>{
@@ -3746,13 +3793,18 @@ function buildEntryEditor(ctx){
     const newEntries={...entries,[ctx.date]:list};
     saveE(newEntries);S.entryEditor=null;renderModals();renderContent();
   }
-  function del2(){
+  async function del2(){
     if(isDateLocked(ctx.date)){alert('เดือนนี้ปิดแล้ว กรุณาปลดล็อกจากหน้าสรุปเดือนก่อนลบ');S.entryEditor=null;renderModals();return;}
     if(!confirm('ลบรายการนี้?')) return;
-    const newEntries={...entries};
-    newEntries[ctx.date]=(newEntries[ctx.date]||[]).filter(e=>e.id!==draft.id);
-    if(!newEntries[ctx.date].length) delete newEntries[ctx.date];
-    saveE(newEntries);S.entryEditor=null;renderModals();renderContent();
+    const button=wrap.querySelector('#delE');
+    if(button) button.disabled=true;
+    try{
+      await deleteEntryById(ctx.date,draft.id);
+      S.entryEditor=null;renderModals();renderContent();
+    }catch(error){
+      if(button) button.disabled=false;
+      alert('ลบรายการไม่สำเร็จ: '+error.message);
+    }
   }
   paint(); return wrap;
 }
