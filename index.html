@@ -1628,6 +1628,7 @@ input:checked+.slider:before{
 .planner-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:6px;}
 .planner-head h2{font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:500;color:var(--text);line-height:1.15;}
 .planner-head p{font-size:12px;color:var(--subtext);margin-top:5px;}
+.planner-head-actions{display:flex;align-items:center;gap:8px;}
 .planner-nav{display:flex;align-items:center;gap:7px;}
 .planner-nav button{width:32px;height:32px;border:0;border-radius:7px;background:var(--surface);color:var(--accent);cursor:pointer;}
 .planner-nav button:hover{background:var(--accent);color:var(--bg);}
@@ -1681,6 +1682,20 @@ input:checked+.slider:before{
 .planner-editor[data-type="hospital"] .planner-review{background:var(--danger);}
 .planner-editor[data-type="busy"] .planner-review{background:var(--gold);color:var(--text);}
 .planner-review:disabled{opacity:.35;cursor:not-allowed;}
+.planner-repeat{padding:11px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.planner-repeat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:10px;color:var(--subtext);}
+.planner-repeat-head strong{color:var(--text);font-size:11px;}
+.planner-repeat-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:7px;}
+.planner-repeat-days button{border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--subtext);padding:6px 1px;font-size:8px;font-weight:700;cursor:pointer;}
+.planner-repeat-days button.active{border-color:var(--secondary);background:var(--secondary);color:var(--bg);}
+.planner-repeat-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;}
+.planner-repeat-actions select,.planner-repeat-actions button{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:8px;font:600 9px 'Sarabun',sans-serif;}
+.planner-repeat-actions button{border-color:var(--accent);background:var(--accent);color:var(--bg);cursor:pointer;}
+.calendar-sync-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:8px 10px;font-size:10px;font-weight:700;cursor:pointer;}
+.calendar-sync-btn.connected{border-color:var(--success);color:var(--success);}
+.calendar-sync-btn:disabled{opacity:.55;cursor:wait;}
+.undo-toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));z-index:3000;display:flex;align-items:center;gap:18px;transform:translateX(-50%);min-width:280px;max-width:calc(100vw - 28px);padding:12px 14px;border:1px solid var(--border);border-radius:7px;background:var(--text);color:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.22);font-size:11px;font-weight:700;}
+.undo-toast button{margin-left:auto;border:0;background:transparent;color:var(--secondary);font:800 11px 'IBM Plex Mono',monospace;cursor:pointer;}
 .planner-confirm-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;margin:14px 0 4px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .planner-confirm-meta strong{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-size:13px;}
 .planner-confirm-meta span{font-size:10px;color:var(--subtext);}
@@ -1736,6 +1751,7 @@ input:checked+.slider:before{
   .history-money strong{font-size:12px;}
   .history-details{white-space:normal;}
   .planner-head{align-items:flex-start;flex-direction:column;}
+  .planner-head-actions{width:100%;justify-content:space-between;}
   .planner-head h2{font-size:21px;}
   .planner-nav{width:100%;justify-content:space-between;}
   .planner-nav strong{min-width:0;}
@@ -1783,6 +1799,13 @@ try{
   db=getFirestore(fbApp);
 }
 const provider = new GoogleAuthProvider();
+const calendarProvider = new GoogleAuthProvider();
+calendarProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+calendarProvider.setCustomParameters({prompt:'consent',include_granted_scopes:'true'});
+let calendarAccessToken='';
+let calendarSyncBusy=false;
+let calendarDeleteQueue=[];
+let undoTimer=null;
 
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{
@@ -2369,6 +2392,43 @@ async function deleteEntryById(date,entryId){
   }
 }
 
+function showUndoToast(message,undoAction){
+  clearTimeout(undoTimer);
+  document.querySelector('.undo-toast')?.remove();
+  const toast=document.createElement('div');
+  toast.className='undo-toast';
+  toast.innerHTML=`<span>${esc(message)}</span><button type="button">UNDO</button>`;
+  document.body.appendChild(toast);
+  const close=()=>{clearTimeout(undoTimer);toast.remove();};
+  undoTimer=setTimeout(close,8000);
+  toast.querySelector('button').onclick=async event=>{
+    event.currentTarget.disabled=true;
+    try{await undoAction();close();renderModals();renderContent();}
+    catch(error){event.currentTarget.disabled=false;alert('กู้คืนไม่สำเร็จ: '+error.message);}
+  };
+}
+
+async function restoreEntry(date,entry){
+  if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนกู้คืนรายการ');
+  setSyncing(true);
+  try{
+    let nextList=[];
+    let nextTombstones={};
+    await runTransaction(db,async transaction=>{
+      const ref=entriesDocRef(currentUser.uid);
+      const snap=await transaction.get(ref);
+      const serverData=snap.exists()?snap.data():{};
+      const serverList=Array.isArray(serverData.data?.[date])?serverData.data[date]:[];
+      nextList=serverList.some(item=>String(item?.id||'')===String(entry.id||''))?serverList:[...serverList,entry];
+      nextTombstones={...(serverData.entryTombstones||{})};
+      delete nextTombstones[String(entry.id||'')];
+      transaction.set(ref,{data:{[date]:nextList},entryTombstones:nextTombstones},{merge:true});
+    });
+    entries={...entries,[date]:nextList};
+    entryTombstones=nextTombstones;
+  }finally{setSyncing(false);}
+}
+
 async function saveMonthLocks(obj){
   monthLocks=obj;
   if(!currentUser) return;
@@ -2387,12 +2447,14 @@ async function savePlannerDates(dates,draft,editingDate=''){
   const uniqueDates=[...new Set(dates)].sort();
   if(!uniqueDates.length) throw new Error('กรุณาเลือกอย่างน้อย 1 วัน');
   setSyncing(true);
+  const savedPlans={};
   try{
     await runTransaction(db,async transaction=>{
       const ref=plansDocRef(currentUser.uid);
       const entriesRef=entriesDocRef(currentUser.uid);
       const [snap,entriesSnap]=await Promise.all([transaction.get(ref),transaction.get(entriesRef)]);
-      const next=snap.exists()?{...(snap.data().data||{})}:{};
+      const serverPlanData=snap.exists()?snap.data():{};
+      const next={...(serverPlanData.data||{})};
       const savedEntries=entriesSnap.exists()?(entriesSnap.data().data||{}):{};
       const recordedDate=uniqueDates.find(date=>Array.isArray(savedEntries[date])&&savedEntries[date].length>0);
       if(recordedDate) throw new Error(`วันที่ ${formatPlannerDate(recordedDate,false)} มีรายการ DF บันทึกอยู่แล้ว`);
@@ -2411,10 +2473,14 @@ async function savePlannerDates(dates,draft,editingDate=''){
           updatedAt:now,
           googleEventId:previous?.googleEventId||''
         };
+        savedPlans[date]=next[date];
       });
       if(editingDate&&!uniqueDates.includes(editingDate)) delete next[editingDate];
-      transaction.set(ref,{data:next});
+      transaction.set(ref,{data:next,calendarDeleteQueue:Array.isArray(serverPlanData.calendarDeleteQueue)?serverPlanData.calendarDeleteQueue:[]});
     });
+    plans={...plans,...savedPlans};
+    if(editingDate&&!uniqueDates.includes(editingDate)) delete plans[editingDate];
+    return savedPlans;
   }finally{
     setSyncing(false);
   }
@@ -2422,19 +2488,50 @@ async function savePlannerDates(dates,draft,editingDate=''){
 
 async function deletePlannerDate(date){
   if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนลบ');
+  let deletedPlan=null;
   try{
     setSyncing(true);
     await runTransaction(db,async transaction=>{
       const ref=plansDocRef(currentUser.uid);
       const snap=await transaction.get(ref);
       if(!snap.exists()) return;
-      const next={...(snap.data().data||{})};
+      const serverData=snap.data();
+      const next={...(serverData.data||{})};
+      deletedPlan=next[date]||null;
       delete next[date];
-      transaction.set(ref,{data:next});
+      const deleteQueue=Array.isArray(serverData.calendarDeleteQueue)?[...serverData.calendarDeleteQueue]:[];
+      if(deletedPlan?.googleEventId&&!deleteQueue.includes(deletedPlan.googleEventId)) deleteQueue.push(deletedPlan.googleEventId);
+      transaction.set(ref,{data:next,calendarDeleteQueue:deleteQueue});
+      calendarDeleteQueue=deleteQueue;
     });
+    delete plans[date];
+    if(calendarAccessToken&&calendarDeleteQueue.length){
+      try{await flushCalendarDeleteQueue();}catch(error){console.warn('Google Calendar delete queued:',error);}
+    }
+    return deletedPlan;
   }finally{
     setSyncing(false);
   }
+}
+
+async function restorePlannerDate(date,plan){
+  if(!currentUser) throw new Error('กรุณาเข้าสู่ระบบก่อนกู้คืนแผน');
+  setSyncing(true);
+  try{
+    await runTransaction(db,async transaction=>{
+      const ref=plansDocRef(currentUser.uid);
+      const snap=await transaction.get(ref);
+      const serverData=snap.exists()?snap.data():{};
+      const serverQueue=Array.isArray(serverData.calendarDeleteQueue)?serverData.calendarDeleteQueue:[];
+      const restoredPlan={...plan,googleEventId:plan.googleEventId&&serverQueue.includes(plan.googleEventId)?plan.googleEventId:''};
+      const next={...(serverData.data||{}),[date]:restoredPlan};
+      const deleteQueue=serverQueue.filter(id=>id!==plan.googleEventId);
+      transaction.set(ref,{data:next,calendarDeleteQueue:deleteQueue});
+      calendarDeleteQueue=deleteQueue;
+      plan=restoredPlan;
+    });
+    plans={...plans,[date]:plan};
+  }finally{setSyncing(false);}
 }
 
 function startListening(uidVal){
@@ -2477,7 +2574,9 @@ function startListening(uidVal){
     alert('เชื่อมต่อ Firestore ไม่สำเร็จ (รายการ): '+err.message);
   });
   unsubPlans = onSnapshot(plansDocRef(uidVal), snap=>{
-    plans=snap.exists()?(snap.data().data||{}):{};
+    const planData=snap.exists()?snap.data():{};
+    plans=planData.data||{};
+    calendarDeleteQueue=Array.isArray(planData.calendarDeleteQueue)?planData.calendarDeleteQueue:[];
     plansLoaded=true;
     tryFirstRender();
     if(clinicsLoaded && entriesLoaded && plansLoaded) renderContent();
@@ -2545,10 +2644,16 @@ function renderLoading(){
 let redirectErrShown=false;
 getRedirectResult(auth).then(result=>{
   if(result && result.user){
+    if(sessionStorage.getItem('df-calendar-connect-pending')==='1'){
+      const credential=GoogleAuthProvider.credentialFromResult(result);
+      calendarAccessToken=credential?.accessToken||'';
+      sessionStorage.removeItem('df-calendar-connect-pending');
+    }
     console.log('Redirect sign-in succeeded:', result.user.uid);
   }
 }).catch(err=>{
   console.error('Redirect sign-in error:',err.code,err.message);
+  sessionStorage.removeItem('df-calendar-connect-pending');
   redirectErrShown=true;
   renderLogin('เข้าสู่ระบบไม่สำเร็จ (redirect): ['+err.code+'] '+err.message);
 });
@@ -2567,7 +2672,7 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,monthClose:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false,searchOpen:false,searchQuery:'',searchClinic:'all',searchYear:'all',searchShift:'all',plannerY:new Date().getFullYear(),plannerM:new Date().getMonth(),plannerSelection:[],plannerDraft:{type:'clinic',clinicId:'',shift:'evening',note:''},plannerConfirm:false,plannerDetail:null,plannerEditingDate:''};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,monthClose:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false,searchOpen:false,searchQuery:'',searchClinic:'all',searchYear:'all',searchShift:'all',plannerY:new Date().getFullYear(),plannerM:new Date().getMonth(),plannerSelection:[],plannerDraft:{type:'clinic',clinicId:'',shift:'evening',note:''},plannerConfirm:false,plannerDetail:null,plannerEditingDate:'',plannerRepeatDays:[],plannerRepeatPattern:'all',plannerRepeatMessage:''};
 applyTheme(S.themeKey);
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -3014,6 +3119,115 @@ function shiftPlannerMonth(delta){
   if(m>11){m=0;y++;}
   S.plannerM=m;S.plannerY=y;renderContent();
 }
+
+async function connectGoogleCalendar(){
+  if(calendarAccessToken) return true;
+  try{
+    const result=await signInWithPopup(auth,calendarProvider);
+    const credential=GoogleAuthProvider.credentialFromResult(result);
+    calendarAccessToken=credential?.accessToken||'';
+    if(!calendarAccessToken) throw new Error('ไม่ได้รับสิทธิ์ Google Calendar');
+    return true;
+  }catch(error){
+    if(['auth/popup-blocked','auth/cancelled-popup-request'].includes(error.code)){
+      sessionStorage.setItem('df-calendar-connect-pending','1');
+      await signInWithRedirect(auth,calendarProvider);
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function calendarRequest(path,options={}){
+  if(!calendarAccessToken) throw new Error('กรุณาเชื่อม Google Calendar ก่อน');
+  const response=await fetch(`https://www.googleapis.com/calendar/v3${path}`,{
+    ...options,
+    headers:{'Authorization':`Bearer ${calendarAccessToken}`,'Content-Type':'application/json',...(options.headers||{})}
+  });
+  if(response.status===204) return null;
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok){
+    if(response.status===401) calendarAccessToken='';
+    const message=body?.error?.message||`Google Calendar error ${response.status}`;
+    throw new Error(response.status===403?`${message} · ตรวจว่าเปิด Google Calendar API ในโปรเจกต์แล้ว`:message);
+  }
+  return body;
+}
+
+function nextCalendarDate(date){
+  const value=new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate()+1);
+  return `${value.getFullYear()}-${pad2(value.getMonth()+1)}-${pad2(value.getDate())}`;
+}
+
+function plannerGoogleEvent(date,plan){
+  const clinic=plan.type==='clinic'?byId(plan.clinicId):null;
+  const summary=plan.type==='clinic'?`Clinic · ${clinic?.name||'Clinic'}`:plan.type==='hospital'?'OT โรงพยาบาล':`วันหยุด / ธุระ${plan.note?` · ${plan.note}`:''}`;
+  const description=['สร้างจาก DF Tracker',plan.note||''].filter(Boolean).join('\n');
+  if(plan.type==='clinic'&&plan.shift==='evening'){
+    return {summary,description,start:{dateTime:`${date}T17:00:00+07:00`,timeZone:'Asia/Bangkok'},end:{dateTime:`${date}T21:00:00+07:00`,timeZone:'Asia/Bangkok'}};
+  }
+  return {summary,description,start:{date},end:{date:nextCalendarDate(date)}};
+}
+
+async function saveGoogleEventId(date,eventId){
+  await runTransaction(db,async transaction=>{
+    const ref=plansDocRef(currentUser.uid);
+    const snap=await transaction.get(ref);
+    const serverPlan=snap.exists()?snap.data().data?.[date]:null;
+    if(!serverPlan) return;
+    const nextPlan={...serverPlan,googleEventId:eventId,googleSyncedAt:new Date().toISOString()};
+    transaction.set(ref,{data:{[date]:nextPlan}},{merge:true});
+    plans={...plans,[date]:nextPlan};
+  });
+}
+
+async function syncPlanDateToGoogle(date,plan){
+  const event=plannerGoogleEvent(date,plan);
+  let result=null;
+  if(plan.googleEventId){
+    try{
+      result=await calendarRequest(`/calendars/primary/events/${encodeURIComponent(plan.googleEventId)}`,{method:'PUT',body:JSON.stringify(event)});
+    }catch(error){
+      if(!/not found|404/i.test(error.message)) throw error;
+    }
+  }
+  if(!result) result=await calendarRequest('/calendars/primary/events',{method:'POST',body:JSON.stringify(event)});
+  if(result?.id&&result.id!==plan.googleEventId) await saveGoogleEventId(date,result.id);
+  return result;
+}
+
+async function flushCalendarDeleteQueue(){
+  if(!calendarAccessToken||!calendarDeleteQueue.length) return;
+  const processed=[];
+  for(const eventId of [...calendarDeleteQueue]){
+    try{await calendarRequest(`/calendars/primary/events/${encodeURIComponent(eventId)}`,{method:'DELETE'});processed.push(eventId);}
+    catch(error){if(/not found|404/i.test(error.message)) processed.push(eventId);else throw error;}
+  }
+  if(!processed.length) return;
+  await runTransaction(db,async transaction=>{
+    const ref=plansDocRef(currentUser.uid);
+    const snap=await transaction.get(ref);
+    const queue=Array.isArray(snap.data()?.calendarDeleteQueue)?snap.data().calendarDeleteQueue:[];
+    calendarDeleteQueue=queue.filter(id=>!processed.includes(id));
+    transaction.set(ref,{calendarDeleteQueue},{merge:true});
+  });
+}
+
+async function syncPlannerMonthToGoogle(y,m){
+  if(calendarSyncBusy) return;
+  calendarSyncBusy=true;renderContent();
+  try{
+    const connected=await connectGoogleCalendar();
+    if(!connected) return;
+    await flushCalendarDeleteQueue();
+    const prefix=`${y}-${pad2(m+1)}-`;
+    const monthPlans=Object.entries(plans).filter(([date])=>date.startsWith(prefix)).sort(([a],[b])=>a.localeCompare(b));
+    for(const [date,plan] of monthPlans) await syncPlanDateToGoogle(date,plan);
+    alert(`Sync Google Calendar แล้ว ${monthPlans.length} วัน`);
+  }finally{calendarSyncBusy=false;renderContent();}
+}
+
 function renderPlanner(el){
   ensurePlannerDraft();
   const y=S.plannerY,m=S.plannerM;
@@ -3043,10 +3257,13 @@ function renderPlanner(el){
   el.innerHTML=`
     <div class="planner-head">
       <div><div class="planner-eyebrow">CLINIC PLANNER</div><h2>Plan clinic days</h2><p>เลือกหลายวัน แล้วตรวจสอบก่อนบันทึกพร้อมกัน</p></div>
-      <div class="planner-nav">
-        <button type="button" id="plannerPrev" aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button>
-        <strong>${MN[m]} ${y+543}</strong>
-        <button type="button" id="plannerNext" aria-label="เดือนถัดไป"><i class="fa-solid fa-chevron-right"></i></button>
+      <div class="planner-head-actions">
+        <button type="button" class="calendar-sync-btn ${calendarAccessToken?'connected':''}" id="plannerCalendarSync"${calendarSyncBusy?' disabled':''}><i class="fa-brands fa-google"></i>${calendarSyncBusy?'กำลัง Sync…':calendarAccessToken?'Sync เดือนนี้':'เชื่อม Calendar'}</button>
+        <div class="planner-nav">
+          <button type="button" id="plannerPrev" aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button>
+          <strong>${MN[m]} ${y+543}</strong>
+          <button type="button" id="plannerNext" aria-label="เดือนถัดไป"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
       </div>
     </div>
     <div class="planner-legend">
@@ -3072,7 +3289,19 @@ function renderPlanner(el){
           <label class="planner-field">รายละเอียด<input type="text" id="plannerNote" value="${esc(draft.note||'')}" placeholder="${draft.type==='hospital'?'เช่น OT โรงพยาบาลช่วงเย็น':'เช่น วันหยุด / ธุระส่วนตัว / ประชุม'}"></label>
         `}
         ${draft.type==='clinic'?`<label class="planner-field">หมายเหตุ<input type="text" id="plannerNote" value="${esc(draft.note||'')}" placeholder=""></label>`:''}
-        <div class="planner-warning" id="plannerWarning" hidden><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+        ${S.plannerEditingDate?'':`<div class="planner-repeat">
+          <div class="planner-repeat-head"><strong>เลือกวันซ้ำ</strong><span>เดือนที่เปิดอยู่</span></div>
+          <div class="planner-repeat-days">${WD.map((day,index)=>`<button type="button" data-repeat-day="${index}" class="${(S.plannerRepeatDays||[]).includes(index)?'active':''}">${day}</button>`).join('')}</div>
+          <div class="planner-repeat-actions">
+            <select id="plannerRepeatPattern">
+              <option value="all"${S.plannerRepeatPattern==='all'?' selected':''}>ทุกสัปดาห์</option>
+              <option value="odd"${S.plannerRepeatPattern==='odd'?' selected':''}>สัปดาห์ 1, 3, 5</option>
+              <option value="even"${S.plannerRepeatPattern==='even'?' selected':''}>สัปดาห์ 2, 4</option>
+            </select>
+            <button type="button" id="plannerApplyRepeat">เลือกวัน</button>
+          </div>
+        </div>`}
+        <div class="planner-warning" id="plannerWarning"${S.plannerRepeatMessage?'':' hidden'}><i class="fa-solid fa-circle-exclamation"></i><span>${esc(S.plannerRepeatMessage||'')}</span></div>
         <div class="planner-picked-head"><strong>${S.plannerEditingDate?'วันที่แก้ไข':`เลือกแล้ว ${selected.size} วัน`}</strong>${S.plannerEditingDate?'':`<button type="button" id="plannerClear">ล้างทั้งหมด</button>`}</div>
         <div class="planner-picked-list">${selectionRows}</div>
         <button type="button" class="planner-review" id="plannerReview"${!selected.size?' disabled':''}>ตรวจสอบ ${selected.size} วัน</button>
@@ -3080,6 +3309,10 @@ function renderPlanner(el){
     </div>`;
   el.querySelector('#plannerPrev').onclick=()=>shiftPlannerMonth(-1);
   el.querySelector('#plannerNext').onclick=()=>shiftPlannerMonth(1);
+  el.querySelector('#plannerCalendarSync').onclick=async()=>{
+    try{await syncPlannerMonthToGoogle(y,m);}
+    catch(error){calendarSyncBusy=false;renderContent();alert('Sync Google Calendar ไม่สำเร็จ: '+error.message);}
+  };
   el.querySelectorAll('[data-planner-date]').forEach(button=>button.onclick=()=>{
     const date=button.dataset.plannerDate;
     if(button.dataset.hasPlan==='1'){
@@ -3100,6 +3333,35 @@ function renderPlanner(el){
   const clinicSelect=el.querySelector('#plannerClinic');if(clinicSelect) clinicSelect.onchange=event=>{S.plannerDraft.clinicId=event.target.value;};
   const shiftSelect=el.querySelector('#plannerShift');if(shiftSelect) shiftSelect.onchange=event=>{S.plannerDraft.shift=event.target.value;};
   const noteInput=el.querySelector('#plannerNote');if(noteInput) noteInput.oninput=event=>{S.plannerDraft.note=event.target.value;};
+  el.querySelectorAll('[data-repeat-day]').forEach(button=>button.onclick=()=>{
+    const day=Number(button.dataset.repeatDay);
+    const next=new Set(S.plannerRepeatDays||[]);
+    if(next.has(day)) next.delete(day); else next.add(day);
+    S.plannerRepeatDays=[...next].sort((a,b)=>a-b);
+    S.plannerRepeatMessage='';
+    renderContent();
+  });
+  const repeatPattern=el.querySelector('#plannerRepeatPattern');
+  if(repeatPattern) repeatPattern.onchange=event=>{S.plannerRepeatPattern=event.target.value;};
+  const applyRepeat=el.querySelector('#plannerApplyRepeat');
+  if(applyRepeat) applyRepeat.onclick=()=>{
+    const weekdays=new Set(S.plannerRepeatDays||[]);
+    if(!weekdays.size){S.plannerRepeatMessage='เลือกวันในสัปดาห์ก่อน';renderContent();return;}
+    const next=new Set(S.plannerSelection||[]);
+    let added=0,skipped=0;
+    for(let day=1;day<=dim;day++){
+      const date=ds(y,m,day);
+      if(!weekdays.has(new Date(y,m,day).getDay())) continue;
+      const occurrence=Math.floor((day-1)/7)+1;
+      if(S.plannerRepeatPattern==='odd'&&occurrence%2===0) continue;
+      if(S.plannerRepeatPattern==='even'&&occurrence%2!==0) continue;
+      if(plans[date]||dayE(date).length){skipped++;continue;}
+      if(!next.has(date)){next.add(date);added++;}
+    }
+    S.plannerSelection=[...next].sort();
+    S.plannerRepeatMessage=skipped?`เลือกเพิ่ม ${added} วัน · ข้าม ${skipped} วันที่มีข้อมูลแล้ว`:`เลือกเพิ่ม ${added} วัน`;
+    renderContent();
+  };
   const clear=el.querySelector('#plannerClear');if(clear) clear.onclick=()=>{S.plannerSelection=[];renderContent();};
   el.querySelectorAll('[data-remove-plan-date]').forEach(button=>button.onclick=()=>{
     if(S.plannerEditingDate) return;
@@ -3490,7 +3752,14 @@ function buildPlannerConfirmModal(){
     const button=event.currentTarget;
     button.disabled=true;button.textContent='กำลังบันทึก…';
     try{
-      await savePlannerDates(dates,draft,S.plannerEditingDate);
+      const savedPlans=await savePlannerDates(dates,draft,S.plannerEditingDate);
+      if(calendarAccessToken){
+        button.textContent='กำลัง Sync Calendar…';
+        try{
+          await flushCalendarDeleteQueue();
+          for(const date of dates) await syncPlanDateToGoogle(date,savedPlans[date]);
+        }catch(calendarError){alert('บันทึกแผนแล้ว แต่ Sync Calendar ไม่สำเร็จ: '+calendarError.message);}
+      }
       S.plannerConfirm=false;
       S.plannerSelection=[];
       S.plannerEditingDate='';
@@ -3538,9 +3807,9 @@ function buildPlannerDetailModal(date){
   wrap.querySelector('#plannerDelete').onclick=async()=>{
     if(!confirm(`ลบแผนวันที่ ${formatPlannerDate(date)}?`)) return;
     try{
-      await deletePlannerDate(date);
-      delete plans[date];
+      const deletedPlan=await deletePlannerDate(date);
       S.plannerDetail=null;renderModals();renderContent();
+      if(deletedPlan) showUndoToast('ลบแผนแล้ว',()=>restorePlannerDate(date,deletedPlan));
     }catch(error){alert('ลบแผนไม่สำเร็จ: '+error.message);}
   };
   return wrap;
@@ -3658,9 +3927,9 @@ function buildDayModal(date){
     if(!confirm(`ลบแผนวันที่ ${dd} ${MN[mm-1]} ${yy+543}?`)) return;
     deleteDayPlan.disabled=true;
     try{
-      await deletePlannerDate(date);
-      delete plans[date];
+      const deletedPlan=await deletePlannerDate(date);
       renderModals();renderContent();
+      if(deletedPlan) showUndoToast('ลบแผนแล้ว',()=>restorePlannerDate(date,deletedPlan));
     }catch(error){
       deleteDayPlan.disabled=false;
       alert('ลบแผนไม่สำเร็จ: '+error.message);
@@ -3848,7 +4117,9 @@ function buildEntryEditor(ctx){
     if(button) button.disabled=true;
     try{
       await deleteEntryById(ctx.date,draft.id);
+      const deletedEntry={...draft,cases:(draft.cases||[]).map(item=>({...item}))};
       S.entryEditor=null;renderModals();renderContent();
+      showUndoToast('ลบรายการแล้ว',()=>restoreEntry(ctx.date,deletedEntry));
     }catch(error){
       if(button) button.disabled=false;
       alert('ลบรายการไม่สำเร็จ: '+error.message);
