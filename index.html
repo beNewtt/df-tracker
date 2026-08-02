@@ -3164,10 +3164,12 @@ function plannerGoogleEvent(date,plan){
   const clinic=plan.type==='clinic'?byId(plan.clinicId):null;
   const summary=plan.type==='clinic'?`Clinic · ${clinic?.name||'Clinic'}`:plan.type==='hospital'?'OT โรงพยาบาล':`วันหยุด / ธุระ${plan.note?` · ${plan.note}`:''}`;
   const description=['สร้างจาก DF Tracker',plan.note||''].filter(Boolean).join('\n');
+  const colorId=plan.type==='hospital'?'9':plan.type==='busy'?'11':'';
+  const base={summary,description,...(colorId?{colorId}:{})};
   if(plan.type==='clinic'&&plan.shift==='evening'){
-    return {summary,description,start:{dateTime:`${date}T17:00:00+07:00`,timeZone:'Asia/Bangkok'},end:{dateTime:`${date}T21:00:00+07:00`,timeZone:'Asia/Bangkok'}};
+    return {...base,start:{dateTime:`${date}T17:00:00+07:00`,timeZone:'Asia/Bangkok'},end:{dateTime:`${date}T21:00:00+07:00`,timeZone:'Asia/Bangkok'}};
   }
-  return {summary,description,start:{date},end:{date:nextCalendarDate(date)}};
+  return {...base,start:{date},end:{date:nextCalendarDate(date)}};
 }
 
 async function saveGoogleEventId(date,eventId){
