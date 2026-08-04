@@ -3396,7 +3396,39 @@ function clinicMonthRows(clinicId,y,m){
     });
 }
 
-function downloadClinicSlip(clinicId){
+function jpegBlobFromCanvas(canvas,quality=0.96){
+  const dataUrl=canvas.toDataURL('image/jpeg',quality);
+  const binary=atob(dataUrl.split(',')[1]);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  return new Blob([bytes],{type:'image/jpeg'});
+}
+
+async function shareOrDownloadJpeg(canvas,filename){
+  const blob=jpegBlobFromCanvas(canvas);
+  const file=typeof File==='function'?new File([blob],filename,{type:'image/jpeg',lastModified:Date.now()}):null;
+  if(file&&navigator.share&&navigator.canShare?.({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:filename});
+      return;
+    }catch(error){
+      if(error?.name==='AbortError') return;
+      console.warn('File sharing unavailable, using download fallback:',error);
+    }
+  }
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.download=filename;
+  link.href=url;
+  link.rel='noopener';
+  if(/iPhone|iPad|iPod/i.test(navigator.userAgent)) link.target='_blank';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+async function downloadClinicSlip(clinicId){
   const clinic=byId(clinicId);
   if(!clinic){ alert('ไม่พบข้อมูลคลินิก'); return; }
   const rows=clinicMonthRows(clinicId,S.y,S.m);
@@ -3506,11 +3538,8 @@ function downloadClinicSlip(clinicId){
   txt(money(totals.netAfterWht),width-64,y,22,800,text,'right');
   txt(`${MN[S.m]} ${S.y+543}`,width/2,height-70,17,500,sub,'center');
 
-  const link=document.createElement('a');
   const safeName=clinic.name.replace(/[\\/:*?"<>|]+/g,'-').trim()||'clinic';
-  link.download=`df-slip-${safeName}-${S.y}-${pad2(S.m+1)}.jpg`;
-  link.href=canvas.toDataURL('image/jpeg',0.96);
-  link.click();
+  await shareOrDownloadJpeg(canvas,`df-slip-${safeName}-${S.y}-${pad2(S.m+1)}.jpg`);
 }
 
 /* ═══════════ Clinics ═══════════ */
