@@ -1696,6 +1696,19 @@ input:checked+.slider:before{
 .calendar-sync-btn:disabled{opacity:.55;cursor:wait;}
 .undo-toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));z-index:3000;display:flex;align-items:center;gap:18px;transform:translateX(-50%);min-width:280px;max-width:calc(100vw - 28px);padding:12px 14px;border:1px solid var(--border);border-radius:7px;background:var(--text);color:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.22);font-size:11px;font-weight:700;}
 .undo-toast button{margin-left:auto;border:0;background:transparent;color:var(--secondary);font:800 11px 'IBM Plex Mono',monospace;cursor:pointer;}
+.pwa-update-banner{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:4000;display:flex;align-items:center;gap:18px;transform:translateX(-50%);min-width:320px;max-width:calc(100vw - 28px);padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:var(--text);color:var(--bg);box-shadow:0 12px 34px rgba(0,0,0,.22);font-size:11px;font-weight:700;}
+.pwa-update-banner span{display:flex;align-items:center;gap:7px;}
+.pwa-update-banner button{margin-left:auto;border:0;border-radius:5px;background:var(--secondary);color:var(--bg);padding:7px 10px;font:800 10px 'Sarabun',sans-serif;cursor:pointer;}
+.pwa-update-banner button:disabled{opacity:.6;cursor:wait;}
+.planner-sync-status{position:absolute;right:7px;bottom:7px;font-size:8px;line-height:1;}
+.planner-sync-status.synced{color:var(--success);}.planner-sync-status.pending{color:var(--gold);}.planner-sync-status.error{color:var(--danger);}
+.planner-sync-summary{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:14px;font-size:8px;color:var(--subtext);}
+.planner-sync-summary span{display:inline-flex;align-items:center;gap:4px;}.planner-sync-summary .synced{color:var(--success);}.planner-sync-summary .pending{color:var(--gold);}.planner-sync-summary .error{color:var(--danger);}
+.planner-google-warning{margin:10px 0 0;padding:10px;border-left:3px solid var(--danger);background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);font-size:10px;font-weight:700;}
+.planner-confirm-row.has-google-conflict{border-left:3px solid var(--danger);padding-left:9px;}
+.planner-confirm-row .google-conflict{display:block;margin-top:4px;color:var(--danger);font-weight:700;}
+.planner-detail-sync{display:inline-flex;align-items:center;gap:5px;}.planner-detail-sync.synced{color:var(--success);}.planner-detail-sync.pending{color:var(--gold);}.planner-detail-sync.error{color:var(--danger);}
+.planner-detail-row .danger{color:var(--danger);overflow-wrap:anywhere;}
 .planner-confirm-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;margin:14px 0 4px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .planner-confirm-meta strong{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-size:13px;}
 .planner-confirm-meta span{font-size:10px;color:var(--subtext);}
@@ -1806,14 +1819,49 @@ let calendarAccessToken='';
 let calendarSyncBusy=false;
 let calendarDeleteQueue=[];
 let undoTimer=null;
+let swRegistration=null;
+let refreshingForUpdate=false;
 
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',event=>{
   event.preventDefault();
   deferredInstallPrompt=event;
 });
+function showPwaUpdateBanner(registration){
+  if(!registration?.waiting||document.querySelector('.pwa-update-banner')) return;
+  const banner=document.createElement('div');
+  banner.className='pwa-update-banner';
+  banner.innerHTML='<span><i class="fa-solid fa-rotate"></i> DF Tracker เวอร์ชันใหม่พร้อมแล้ว</span><button type="button">อัปเดต</button>';
+  banner.querySelector('button').onclick=()=>{
+    banner.querySelector('button').disabled=true;
+    banner.querySelector('button').textContent='กำลังอัปเดต…';
+    registration.waiting?.postMessage({type:'SKIP_WAITING'});
+  };
+  document.body.appendChild(banner);
+}
+function watchServiceWorkerUpdate(registration){
+  swRegistration=registration;
+  if(registration.waiting) showPwaUpdateBanner(registration);
+  registration.addEventListener('updatefound',()=>{
+    const worker=registration.installing;
+    worker?.addEventListener('statechange',()=>{
+      if(worker.state==='installed'&&navigator.serviceWorker.controller) showPwaUpdateBanner(registration);
+    });
+  });
+}
 if('serviceWorker' in navigator&&location.protocol==='https:'){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(err=>console.warn('Service worker registration failed:',err)));
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(refreshingForUpdate) return;
+    refreshingForUpdate=true;
+    location.reload();
+  });
+  window.addEventListener('load',async()=>{
+    try{
+      const registration=await navigator.serviceWorker.register('./service-worker.js');
+      watchServiceWorkerUpdate(registration);
+      setInterval(()=>registration.update().catch(()=>{}),30*60*1000);
+    }catch(err){console.warn('Service worker registration failed:',err);}
+  });
 }
 
 /* ═══════════ Constants ═══════════ */
@@ -2471,7 +2519,9 @@ async function savePlannerDates(dates,draft,editingDate=''){
           note:String(draft.note||'').trim(),
           createdAt:previous?.createdAt||now,
           updatedAt:now,
-          googleEventId:previous?.googleEventId||''
+          googleEventId:previous?.googleEventId||'',
+          googleSyncStatus:'pending',
+          googleSyncError:''
         };
         savedPlans[date]=next[date];
       });
@@ -2672,7 +2722,7 @@ onAuthStateChanged(auth, user=>{
 });
 
 /* ═══════════ State ═══════════ */
-let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,monthClose:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false,searchOpen:false,searchQuery:'',searchClinic:'all',searchYear:'all',searchShift:'all',plannerY:new Date().getFullYear(),plannerM:new Date().getMonth(),plannerSelection:[],plannerDraft:{type:'clinic',clinicId:'',shift:'evening',note:''},plannerConfirm:false,plannerDetail:null,plannerEditingDate:'',plannerRepeatDays:[],plannerRepeatPattern:'all',plannerRepeatMessage:''};
+let S={tab:'calendar',y:new Date().getFullYear(),m:new Date().getMonth(),dayModal:null,entryEditor:null,clinicEditor:null,monthClose:null,clinicFilter:'all',taxYear:new Date().getFullYear(),themeKey:loadThemeKey(),settingsOpen:false,searchOpen:false,searchQuery:'',searchClinic:'all',searchYear:'all',searchShift:'all',plannerY:new Date().getFullYear(),plannerM:new Date().getMonth(),plannerSelection:[],plannerDraft:{type:'clinic',clinicId:'',shift:'evening',note:''},plannerConfirm:false,plannerDetail:null,plannerEditingDate:'',plannerRepeatDays:[],plannerRepeatPattern:'all',plannerRepeatMessage:'',plannerGoogleConflicts:{},plannerConflictChecking:false};
 applyTheme(S.themeKey);
 const WD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MN=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -3172,31 +3222,88 @@ function plannerGoogleEvent(date,plan){
   return {...base,start:{date},end:{date:nextCalendarDate(date)}};
 }
 
-async function saveGoogleEventId(date,eventId){
+async function savePlanGoogleSyncState(date,patch){
+  let nextPlan=null;
   await runTransaction(db,async transaction=>{
     const ref=plansDocRef(currentUser.uid);
     const snap=await transaction.get(ref);
     const serverPlan=snap.exists()?snap.data().data?.[date]:null;
     if(!serverPlan) return;
-    const nextPlan={...serverPlan,googleEventId:eventId,googleSyncedAt:new Date().toISOString()};
+    nextPlan={...serverPlan,...patch};
     transaction.set(ref,{data:{[date]:nextPlan}},{merge:true});
-    plans={...plans,[date]:nextPlan};
   });
+  if(nextPlan) plans={...plans,[date]:nextPlan};
+  return nextPlan;
 }
 
 async function syncPlanDateToGoogle(date,plan){
-  const event=plannerGoogleEvent(date,plan);
-  let result=null;
-  if(plan.googleEventId){
-    try{
-      result=await calendarRequest(`/calendars/primary/events/${encodeURIComponent(plan.googleEventId)}`,{method:'PUT',body:JSON.stringify(event)});
-    }catch(error){
-      if(!/not found|404/i.test(error.message)) throw error;
+  try{
+    const event=plannerGoogleEvent(date,plan);
+    let result=null;
+    if(plan.googleEventId){
+      try{
+        result=await calendarRequest(`/calendars/primary/events/${encodeURIComponent(plan.googleEventId)}`,{method:'PUT',body:JSON.stringify(event)});
+      }catch(error){
+        if(!/not found|404/i.test(error.message)) throw error;
+      }
     }
+    if(!result) result=await calendarRequest('/calendars/primary/events',{method:'POST',body:JSON.stringify(event)});
+    await savePlanGoogleSyncState(date,{
+      googleEventId:result?.id||plan.googleEventId||'',
+      googleSyncStatus:'synced',
+      googleSyncError:'',
+      googleSyncedAt:new Date().toISOString()
+    });
+    return result;
+  }catch(error){
+    try{await savePlanGoogleSyncState(date,{googleSyncStatus:'error',googleSyncError:error.message});}catch(stateError){console.warn('Could not save Calendar sync error:',stateError);}
+    throw error;
   }
-  if(!result) result=await calendarRequest('/calendars/primary/events',{method:'POST',body:JSON.stringify(event)});
-  if(result?.id&&result.id!==plan.googleEventId) await saveGoogleEventId(date,result.id);
-  return result;
+}
+
+function plannerSyncStatus(plan){
+  return plan?.googleSyncStatus||(plan?.googleEventId?'synced':'pending');
+}
+
+function plannerSyncMeta(plan){
+  const status=plannerSyncStatus(plan);
+  if(status==='synced') return {status,icon:'fa-circle-check',label:'Synced'};
+  if(status==='error') return {status,icon:'fa-circle-exclamation',label:'Sync error'};
+  return {status:'pending',icon:'fa-clock',label:'Pending'};
+}
+
+function googleEventRange(event){
+  const startValue=event?.start?.dateTime||event?.start?.date;
+  const endValue=event?.end?.dateTime||event?.end?.date;
+  if(!startValue||!endValue) return null;
+  const start=new Date(event.start.date?`${startValue}T00:00:00+07:00`:startValue);
+  const end=new Date(event.end.date?`${endValue}T00:00:00+07:00`:endValue);
+  return Number.isNaN(start.getTime())||Number.isNaN(end.getTime())?null:{start,end};
+}
+
+async function findGoogleCalendarConflicts(dates){
+  if(!calendarAccessToken||!dates.length) return {};
+  const sorted=[...new Set(dates)].sort();
+  const params=new URLSearchParams({
+    timeMin:`${sorted[0]}T00:00:00+07:00`,
+    timeMax:`${nextCalendarDate(sorted[sorted.length-1])}T00:00:00+07:00`,
+    singleEvents:'true',
+    orderBy:'startTime',
+    maxResults:'2500'
+  });
+  const data=await calendarRequest(`/calendars/primary/events?${params.toString()}`);
+  const events=(data?.items||[]).filter(event=>event.status!=='cancelled'&&event.transparency!=='transparent');
+  return Object.fromEntries(sorted.map(date=>{
+    const dayStart=new Date(`${date}T00:00:00+07:00`);
+    const dayEnd=new Date(`${nextCalendarDate(date)}T00:00:00+07:00`);
+    const ownEventId=plans[date]?.googleEventId||'';
+    const conflicts=events.filter(event=>{
+      if(ownEventId&&event.id===ownEventId) return false;
+      const range=googleEventRange(event);
+      return range&&range.start<dayEnd&&range.end>dayStart;
+    }).map(event=>({id:event.id||'',summary:event.summary||'(ไม่มีชื่อรายการ)'}));
+    return [date,conflicts];
+  }).filter(([,conflicts])=>conflicts.length));
 }
 
 async function flushCalendarDeleteQueue(){
@@ -3225,14 +3332,21 @@ async function syncPlannerMonthToGoogle(y,m){
     await flushCalendarDeleteQueue();
     const prefix=`${y}-${pad2(m+1)}-`;
     const monthPlans=Object.entries(plans).filter(([date])=>date.startsWith(prefix)).sort(([a],[b])=>a.localeCompare(b));
-    for(const [date,plan] of monthPlans) await syncPlanDateToGoogle(date,plan);
-    alert(`Sync Google Calendar แล้ว ${monthPlans.length} วัน`);
+    let synced=0,failed=0;
+    for(const [date,plan] of monthPlans){
+      try{await syncPlanDateToGoogle(date,plan);synced++;}
+      catch(error){failed++;console.warn(`Calendar sync failed for ${date}:`,error);}
+    }
+    alert(failed?`Sync สำเร็จ ${synced} วัน · ไม่สำเร็จ ${failed} วัน\nกดวันที่มีเครื่องหมายสีแดงเพื่อดูรายละเอียดและลองใหม่`:`Sync Google Calendar แล้ว ${synced} วัน`);
   }finally{calendarSyncBusy=false;renderContent();}
 }
 
 function renderPlanner(el){
   ensurePlannerDraft();
   const y=S.plannerY,m=S.plannerM;
+  const monthPrefix=`${y}-${pad2(m+1)}-`;
+  const monthPlanValues=Object.entries(plans).filter(([date])=>date.startsWith(monthPrefix)).map(([,plan])=>plan);
+  const syncCounts=monthPlanValues.reduce((counts,plan)=>{counts[plannerSyncStatus(plan)]++;return counts;},{synced:0,pending:0,error:0});
   const startDow=new Date(y,m,1).getDay();
   const dim=new Date(y,m+1,0).getDate();
   const selected=new Set(S.plannerSelection||[]);
@@ -3246,10 +3360,12 @@ function renderPlanner(el){
     const isEditing=S.plannerEditingDate===date;
     const isSelected=selected.has(date);
     const planClass=plan&&!isEditing?` plan-${plan.type}`:hasRecordedEntry?' plan-recorded':'';
+    const syncMeta=plan&&!isEditing?plannerSyncMeta(plan):null;
     cells+=`
       <button type="button" class="planner-day${planClass}${isSelected?' plan-selected':''}" data-planner-date="${date}" data-has-plan="${plan&&!isEditing?'1':'0'}" data-has-entry="${hasRecordedEntry?'1':'0'}">
         <span class="planner-dnum">${day}</span>
         ${plan&&!isEditing?`<span class="planner-label">${esc(plannerPlanLabel(plan))}</span>`:hasRecordedEntry?'<span class="planner-label">บันทึก DF แล้ว</span>':''}
+        ${syncMeta?`<i class="fa-solid ${syncMeta.icon} planner-sync-status ${syncMeta.status}" title="Google Calendar: ${syncMeta.label}" aria-label="Google Calendar: ${syncMeta.label}"></i>`:''}
       </button>`;
   }
   const remainder=(7-(startDow+dim)%7)%7;
@@ -3260,7 +3376,8 @@ function renderPlanner(el){
     <div class="planner-head">
       <div><div class="planner-eyebrow">CLINIC PLANNER</div><h2>Plan clinic days</h2><p>เลือกหลายวัน แล้วตรวจสอบก่อนบันทึกพร้อมกัน</p></div>
       <div class="planner-head-actions">
-        <button type="button" class="calendar-sync-btn ${calendarAccessToken?'connected':''}" id="plannerCalendarSync"${calendarSyncBusy?' disabled':''}><i class="fa-brands fa-google"></i>${calendarSyncBusy?'กำลัง Sync…':calendarAccessToken?'Sync เดือนนี้':'เชื่อม Calendar'}</button>
+        <div><button type="button" class="calendar-sync-btn ${calendarAccessToken?'connected':''}" id="plannerCalendarSync"${calendarSyncBusy?' disabled':''}><i class="fa-brands fa-google"></i>${calendarSyncBusy?'กำลัง Sync…':calendarAccessToken?'Sync เดือนนี้':'เชื่อม Calendar'}</button>
+        ${monthPlanValues.length?`<div class="planner-sync-summary"><span class="synced"><i class="fa-solid fa-circle-check"></i>${syncCounts.synced}</span><span class="pending"><i class="fa-solid fa-clock"></i>${syncCounts.pending}</span><span class="error"><i class="fa-solid fa-circle-exclamation"></i>${syncCounts.error}</span></div>`:''}</div>
         <div class="planner-nav">
           <button type="button" id="plannerPrev" aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button>
           <strong>${MN[m]} ${y+543}</strong>
@@ -3369,9 +3486,19 @@ function renderPlanner(el){
     if(S.plannerEditingDate) return;
     S.plannerSelection=(S.plannerSelection||[]).filter(date=>date!==button.dataset.removePlanDate);renderContent();
   });
-  el.querySelector('#plannerReview').onclick=()=>{
+  el.querySelector('#plannerReview').onclick=async event=>{
     if(!S.plannerSelection.length) return;
     if(draft.type==='clinic'&&!draft.clinicId){alert('กรุณาเลือกคลินิก');return;}
+    const button=event.currentTarget;
+    S.plannerGoogleConflicts={};
+    if(calendarAccessToken){
+      button.disabled=true;button.textContent='กำลังเช็ก Google Calendar…';
+      try{S.plannerGoogleConflicts=await findGoogleCalendarConflicts(S.plannerSelection);}
+      catch(error){
+        button.disabled=false;button.textContent=`ตรวจสอบ ${S.plannerSelection.length} วัน`;
+        alert('ตรวจ Google Calendar ไม่สำเร็จ: '+error.message);return;
+      }
+    }
     S.plannerConfirm=true;renderModals();
   };
 }
@@ -3761,21 +3888,28 @@ function buildPlannerConfirmModal(){
   const type=PLAN_TYPES[draft.type]||PLAN_TYPES.clinic;
   const title=draft.type==='clinic'?(byId(draft.clinicId)?.name||'คลินิก'):type.label;
   const detail=draft.type==='clinic'?(draft.shift==='fullday'?'ทั้งวัน':'ช่วงเย็น'):(draft.note||'ไม่ระบุรายละเอียด');
+  const googleConflicts=S.plannerGoogleConflicts||{};
+  const conflictDates=dates.filter(date=>googleConflicts[date]?.length);
   wrap.innerHTML=`
     <div class="modal">
       <div class="modal-h"><h2>ตรวจสอบ ${dates.length} วันก่อนบันทึก</h2></div>
       <div class="planner-confirm-meta"><strong>${esc(title)}</strong><span>${esc(detail)}</span></div>
+      ${conflictDates.length?`<div class="planner-google-warning"><i class="fa-brands fa-google"></i> พบรายการใน Google Calendar ${conflictDates.length} วัน กรุณาตรวจชื่อรายการด้านล่างก่อนยืนยัน</div>`:''}
       <div class="planner-confirm-list">
-        ${dates.map(date=>`<div class="planner-confirm-row"><strong>${esc(formatPlannerDate(date,false))}</strong><span>${esc(title)} · ${esc(detail)}${draft.note&&draft.type==='clinic'?` · ${esc(draft.note)}`:''}</span></div>`).join('')}
+        ${dates.map(date=>{
+          const conflicts=googleConflicts[date]||[];
+          return `<div class="planner-confirm-row${conflicts.length?' has-google-conflict':''}"><strong>${esc(formatPlannerDate(date,false))}</strong><span>${esc(title)} · ${esc(detail)}${draft.note&&draft.type==='clinic'?` · ${esc(draft.note)}`:''}${conflicts.length?`<span class="google-conflict"><i class="fa-brands fa-google"></i> ชนกับ: ${esc(conflicts.map(item=>item.summary).join(', '))}</span>`:''}</span></div>`;
+        }).join('')}
       </div>
       <div class="planner-checks">
         <span><i class="fa-solid fa-check"></i>ไม่ชนคลินิกอื่น</span>
         <span><i class="fa-solid fa-check"></i>ไม่ชน OT โรงพยาบาล</span>
         <span><i class="fa-solid fa-check"></i>ไม่ชนวันหยุด / ธุระ</span>
+        ${calendarAccessToken&&!conflictDates.length?'<span><i class="fa-brands fa-google"></i>ไม่พบรายการชนใน Google Calendar</span>':''}
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" id="plannerConfirmBack">กลับไปแก้</button>
-        <button class="btn btn-primary" id="plannerConfirmSave">ยืนยันบันทึก ${dates.length} วัน</button>
+        <button class="btn ${conflictDates.length?'btn-danger':'btn-primary'}" id="plannerConfirmSave">${conflictDates.length?`ยืนยันแม้มีนัดชน ${conflictDates.length} วัน`:`ยืนยันบันทึก ${dates.length} วัน`}</button>
       </div>
     </div>`;
   wrap.querySelector('#plannerConfirmBack').onclick=()=>{S.plannerConfirm=false;renderModals();};
@@ -3786,19 +3920,23 @@ function buildPlannerConfirmModal(){
       const savedPlans=await savePlannerDates(dates,draft,S.plannerEditingDate);
       if(calendarAccessToken){
         button.textContent='กำลัง Sync Calendar…';
-        try{
-          await flushCalendarDeleteQueue();
-          for(const date of dates) await syncPlanDateToGoogle(date,savedPlans[date]);
-        }catch(calendarError){alert('บันทึกแผนแล้ว แต่ Sync Calendar ไม่สำเร็จ: '+calendarError.message);}
+        try{await flushCalendarDeleteQueue();}catch(calendarError){console.warn('Calendar delete queue failed:',calendarError);}
+        let syncFailed=0;
+        for(const date of dates){
+          try{await syncPlanDateToGoogle(date,savedPlans[date]);}
+          catch(calendarError){syncFailed++;console.warn(`Calendar sync failed for ${date}:`,calendarError);}
+        }
+        if(syncFailed) alert(`บันทึกแผนแล้ว แต่ Sync Calendar ไม่สำเร็จ ${syncFailed} วัน\nกดวันที่มีเครื่องหมายสีแดงเพื่อลองใหม่`);
       }
       S.plannerConfirm=false;
       S.plannerSelection=[];
+      S.plannerGoogleConflicts={};
       S.plannerEditingDate='';
       S.plannerDraft={type:draft.type,clinicId:draft.clinicId,shift:draft.shift,note:''};
       renderModals();renderContent();
     }catch(error){
       alert('บันทึกแผนไม่สำเร็จ: '+error.message);
-      button.disabled=false;button.textContent=`ยืนยันบันทึก ${dates.length} วัน`;
+      button.disabled=false;button.textContent=conflictDates.length?`ยืนยันแม้มีนัดชน ${conflictDates.length} วัน`:`ยืนยันบันทึก ${dates.length} วัน`;
     }
   };
   return wrap;
@@ -3813,6 +3951,7 @@ function buildPlannerDetailModal(date){
   const clinic=plan.type==='clinic'?byId(plan.clinicId):null;
   const type=PLAN_TYPES[plan.type]||PLAN_TYPES.busy;
   const detail=plan.type==='clinic'?(plan.shift==='fullday'?'ทั้งวัน':'ช่วงเย็น'):(plan.note||'—');
+  const syncMeta=plannerSyncMeta(plan);
   wrap.innerHTML=`
     <div class="modal">
       <div class="modal-h"><h2>${esc(formatPlannerDate(date))}</h2></div>
@@ -3820,14 +3959,27 @@ function buildPlannerDetailModal(date){
       <div class="planner-detail-grid">
         ${plan.type==='clinic'?`<div class="planner-detail-row"><span>คลินิก</span><strong>${esc(clinic?.name||'(คลินิกถูกลบแล้ว)')}</strong></div><div class="planner-detail-row"><span>ช่วงเวลา</span><strong>${esc(detail)}</strong></div>`:`<div class="planner-detail-row"><span>รายการ</span><strong>${esc(detail)}</strong></div>`}
         <div class="planner-detail-row"><span>หมายเหตุ</span><strong>${esc(plan.note||'—')}</strong></div>
+        <div class="planner-detail-row"><span>Calendar</span><strong class="planner-detail-sync ${syncMeta.status}"><i class="fa-solid ${syncMeta.icon}"></i>${syncMeta.label}</strong></div>
+        ${plan.googleSyncError?`<div class="planner-detail-row"><span>ข้อผิดพลาด</span><strong class="danger">${esc(plan.googleSyncError)}</strong></div>`:''}
       </div>
       <div class="modal-footer">
         <button class="btn btn-danger" id="plannerDelete"><i class="fa-solid fa-trash icon-inline"></i>ลบวันนี้</button>
         <button class="btn btn-ghost" id="plannerDetailClose">ปิด</button>
+        ${syncMeta.status!=='synced'?'<button class="btn btn-ghost" id="plannerRetrySync"><i class="fa-brands fa-google icon-inline"></i>ลอง Sync ใหม่</button>':''}
         <button class="btn btn-primary" id="plannerEdit"><i class="fa-solid fa-pen icon-inline"></i>แก้ไข</button>
       </div>
     </div>`;
   wrap.querySelector('#plannerDetailClose').onclick=()=>{S.plannerDetail=null;renderModals();};
+  const retrySync=wrap.querySelector('#plannerRetrySync');
+  if(retrySync) retrySync.onclick=async event=>{
+    const button=event.currentTarget;button.disabled=true;button.textContent='กำลัง Sync…';
+    try{
+      const connected=await connectGoogleCalendar();
+      if(!connected) return;
+      await syncPlanDateToGoogle(date,plans[date]||plan);
+      renderContent();renderModals();
+    }catch(error){alert('Sync Google Calendar ไม่สำเร็จ: '+error.message);button.disabled=false;button.textContent='ลอง Sync ใหม่';}
+  };
   wrap.querySelector('#plannerEdit').onclick=()=>{
     const[y,m]=date.split('-').map(Number);
     S.plannerY=y;S.plannerM=m-1;
