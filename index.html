@@ -314,7 +314,7 @@ html[data-theme="oblivion"] #logoutBtn:hover{background:#C33D29;color:#fff;}
 @media(min-width:521px){
   .daygrid .cell{
     min-height:0;
-    aspect-ratio:1.2 / 1;
+    aspect-ratio:1.45 / 1;
   }
 }
 
@@ -3105,10 +3105,12 @@ function renderCalendar(el){
     const pct=de.length?Math.max(6,Math.min(100,net/maxNet*100)):0;
     const dots=de.map(e=>{const c=byId(e.clinicId);return`<span class="cdot" style="background:${c?c.color:'#aaa'}"></span>`;}).join('');
     const isToday=date===today;
+    const showPlanLabel=plan&&!(de.length&&plan.type==='clinic');
+    const planClinicColor=plan?.type==='clinic'?(byId(plan.clinicId)?.color||'var(--accent)'):'';
     cells+=`
-      <div class="cell ${isToday?'today':''} ${de.length?'has-data':''} ${plan?'has-plan calendar-plan-'+plan.type:''}" data-date="${date}">
+      <div class="cell ${isToday?'today':''} ${de.length?'has-data':''} ${showPlanLabel?'has-plan ':''}${plan?'calendar-plan-'+plan.type:''}" data-date="${date}">
         <div class="dnum">${d}</div>
-        ${plan?`<div class="cal-plan-label plan-${plan.type}">${esc(plannerPlanLabel(plan))}</div>`:''}
+        ${showPlanLabel?`<div class="cal-plan-label plan-${plan.type}"${planClinicColor?` style="color:${esc(planClinicColor)}"`:''}>${esc(plannerPlanLabel(plan))}</div>`:''}
         <div class="cdots">${dots}</div>
         ${de.length?`<div class="cbar" style="width:${pct}%"></div><div class="cnet">฿${fmt(net)}</div>`:''}
       </div>`;
