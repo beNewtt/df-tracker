@@ -311,10 +311,21 @@ html[data-theme="oblivion"] #logoutBtn:hover{background:#C33D29;color:#fff;}
   background:var(--bg);
 }
 
-@media(min-width:521px){
+@media(min-width:521px) and (max-width:899px){
   .daygrid .cell{
     min-height:0;
-    aspect-ratio:1.58 / 1;
+    aspect-ratio:1.45 / 1;
+  }
+}
+
+@media(min-width:900px){
+  #content.calendar-view{
+    max-width:840px;
+    margin:0 auto;
+  }
+  .daygrid .cell{
+    min-height:92px;
+    height:92px;
   }
 }
 
@@ -3000,7 +3011,7 @@ function renderContent(){
   const el=document.getElementById('content');
   if(!el) return;
   if(S.searchOpen){el.className='';return renderSearch(el);}
-  el.className = S.tab==='clinics' ? 'clinics-view' : '';
+  el.className = S.tab==='clinics' ? 'clinics-view' : S.tab==='calendar' ? 'calendar-view' : '';
   if(S.tab==='calendar') return renderCalendar(el);
   if(S.tab==='clinics')  return renderClinics(el);
   if(S.tab==='planner')  return renderPlanner(el);

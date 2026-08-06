@@ -1,4 +1,4 @@
-const CACHE_NAME='df-tracker-shell-v18';
+const CACHE_NAME='df-tracker-shell-v19';
 const APP_SHELL=[
   './',
   './index.html',
