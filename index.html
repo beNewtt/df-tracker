@@ -1628,7 +1628,8 @@ input:checked+.slider:before{
 .planner-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--subtext);margin-bottom:6px;}
 .planner-head h2{font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:500;color:var(--text);line-height:1.15;}
 .planner-head p{font-size:12px;color:var(--subtext);margin-top:5px;}
-.planner-head-actions{display:flex;align-items:center;gap:8px;}
+.planner-head-actions{display:flex;align-items:flex-start;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
+.planner-calendar-control{display:flex;flex-direction:column;align-items:flex-end;gap:7px;}
 .planner-nav{display:flex;align-items:center;gap:7px;}
 .planner-nav button{width:32px;height:32px;border:0;border-radius:7px;background:var(--surface);color:var(--accent);cursor:pointer;}
 .planner-nav button:hover{background:var(--accent);color:var(--bg);}
@@ -1652,7 +1653,7 @@ input:checked+.slider:before{
 .planner-day:not(:disabled):hover{background:var(--surface);}
 .planner-day .planner-dnum{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;}
 .planner-day .planner-label{display:block;margin-top:14px;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--subtext);}
-.planner-day.plan-clinic .planner-label{color:var(--accent);}
+.planner-day.plan-clinic .planner-label{color:var(--planner-clinic-color,var(--accent));font-weight:700;}
 .planner-day.plan-clinic .planner-label::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:4px;}
 .planner-day.plan-hospital{box-shadow:inset 0 0 0 2px var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent);}
 .planner-day.plan-hospital .planner-label{color:var(--danger);font-weight:700;}
@@ -1702,7 +1703,7 @@ input:checked+.slider:before{
 .pwa-update-banner button:disabled{opacity:.6;cursor:wait;}
 .planner-sync-status{position:absolute;right:7px;bottom:7px;font-size:8px;line-height:1;}
 .planner-sync-status.synced{color:var(--success);}.planner-sync-status.pending{color:var(--gold);}.planner-sync-status.error{color:var(--danger);}
-.planner-sync-summary{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:14px;font-size:8px;color:var(--subtext);}
+.planner-sync-summary{display:flex;align-items:center;justify-content:flex-end;gap:9px;min-height:14px;font-size:8px;color:var(--subtext);line-height:1;}
 .planner-sync-summary span{display:inline-flex;align-items:center;gap:4px;}.planner-sync-summary .synced{color:var(--success);}.planner-sync-summary .pending{color:var(--gold);}.planner-sync-summary .error{color:var(--danger);}
 .planner-google-warning{margin:10px 0 0;padding:10px;border-left:3px solid var(--danger);background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);font-size:10px;font-weight:700;}
 .planner-confirm-row.has-google-conflict{border-left:3px solid var(--danger);padding-left:9px;}
@@ -1765,6 +1766,7 @@ input:checked+.slider:before{
   .history-details{white-space:normal;}
   .planner-head{align-items:flex-start;flex-direction:column;}
   .planner-head-actions{width:100%;justify-content:space-between;}
+  .planner-calendar-control{align-items:flex-start;}
   .planner-head h2{font-size:21px;}
   .planner-nav{width:100%;justify-content:space-between;}
   .planner-nav strong{min-width:0;}
@@ -3361,8 +3363,9 @@ function renderPlanner(el){
     const isSelected=selected.has(date);
     const planClass=plan&&!isEditing?` plan-${plan.type}`:hasRecordedEntry?' plan-recorded':'';
     const syncMeta=plan&&!isEditing?plannerSyncMeta(plan):null;
+    const clinicColor=plan?.type==='clinic'?(byId(plan.clinicId)?.color||'var(--accent)'):'';
     cells+=`
-      <button type="button" class="planner-day${planClass}${isSelected?' plan-selected':''}" data-planner-date="${date}" data-has-plan="${plan&&!isEditing?'1':'0'}" data-has-entry="${hasRecordedEntry?'1':'0'}">
+      <button type="button" class="planner-day${planClass}${isSelected?' plan-selected':''}"${clinicColor?` style="--planner-clinic-color:${esc(clinicColor)}"`:''} data-planner-date="${date}" data-has-plan="${plan&&!isEditing?'1':'0'}" data-has-entry="${hasRecordedEntry?'1':'0'}">
         <span class="planner-dnum">${day}</span>
         ${plan&&!isEditing?`<span class="planner-label">${esc(plannerPlanLabel(plan))}</span>`:hasRecordedEntry?'<span class="planner-label">บันทึก DF แล้ว</span>':''}
         ${syncMeta?`<i class="fa-solid ${syncMeta.icon} planner-sync-status ${syncMeta.status}" title="Google Calendar: ${syncMeta.label}" aria-label="Google Calendar: ${syncMeta.label}"></i>`:''}
@@ -3376,7 +3379,7 @@ function renderPlanner(el){
     <div class="planner-head">
       <div><div class="planner-eyebrow">CLINIC PLANNER</div><h2>Plan clinic days</h2><p>เลือกหลายวัน แล้วตรวจสอบก่อนบันทึกพร้อมกัน</p></div>
       <div class="planner-head-actions">
-        <div><button type="button" class="calendar-sync-btn ${calendarAccessToken?'connected':''}" id="plannerCalendarSync"${calendarSyncBusy?' disabled':''}><i class="fa-brands fa-google"></i>${calendarSyncBusy?'กำลัง Sync…':calendarAccessToken?'Sync เดือนนี้':'เชื่อม Calendar'}</button>
+        <div class="planner-calendar-control"><button type="button" class="calendar-sync-btn ${calendarAccessToken?'connected':''}" id="plannerCalendarSync"${calendarSyncBusy?' disabled':''}><i class="fa-brands fa-google"></i>${calendarSyncBusy?'กำลัง Sync…':calendarAccessToken?'Sync เดือนนี้':'เชื่อม Calendar'}</button>
         ${monthPlanValues.length?`<div class="planner-sync-summary"><span class="synced"><i class="fa-solid fa-circle-check"></i>${syncCounts.synced}</span><span class="pending"><i class="fa-solid fa-clock"></i>${syncCounts.pending}</span><span class="error"><i class="fa-solid fa-circle-exclamation"></i>${syncCounts.error}</span></div>`:''}</div>
         <div class="planner-nav">
           <button type="button" id="plannerPrev" aria-label="เดือนก่อนหน้า"><i class="fa-solid fa-chevron-left"></i></button>
